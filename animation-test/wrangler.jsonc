@@ -2,6 +2,7 @@
   "name": "midkup",
   "compatibility_date": "2026-11-09",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "html_handling": "none"
   }
 }

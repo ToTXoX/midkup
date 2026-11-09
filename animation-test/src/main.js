@@ -899,8 +899,13 @@ try {
   document.querySelectorAll('.controls button, .controls input').forEach((e) => e.disabled = false);
   $('status').textContent = resourceMode ? `小伙伴准备好啦` : `GLB 已加载 · ${gltf.animations.length} 段动作 · ${[...skeletons][0].bones.length} 根骨骼`;
   playClip('Idle', { immediate: true });
-  if(resourceMode&&new URLSearchParams(location.search).get('scene')==='garden'){$('scene-view').value='garden';$('scene-view').dispatchEvent(new Event('change'));}
-  const previewClip=new URLSearchParams(location.search).get('clip');
+  const params = new URLSearchParams(location.search);
+  const initialScene = params.get('scene') ?? (location.pathname === '/' ? 'garden' : 'stage');
+  if (resourceMode && initialScene === 'garden') {
+    $('scene-view').value = 'garden';
+    $('scene-view').dispatchEvent(new Event('change'));
+  }
+  const previewClip = params.get('clip');
   if(resourceMode&&resourcePreview.view==='stage'&&actions.has(previewClip))playClip(previewClip,{immediate:true});
 } catch (error) {
   diagnostics.errors.push(error.message);
