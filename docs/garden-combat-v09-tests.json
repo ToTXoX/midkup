@@ -1,0 +1,129 @@
+{
+  "timestamp": "2026-11-09T02:01:22.262Z",
+  "browser": "157.0.4341.42",
+  "checks": [
+    {
+      "name": "Low-arc aiming reaches targets with the exact visible jet speed and gravity; impossible shots remain out of range",
+      "passed": true
+    },
+    {
+      "name": "Clicking a target stops movement, turns the actor and locks a clear reticle without auto-firing",
+      "passed": true
+    },
+    {
+      "name": "Space starts closed-mouth anticipation; pause freezes the animation, jet and hit state",
+      "passed": true
+    },
+    {
+      "name": "The water travels from the mouth before any hit is awarded",
+      "passed": true,
+      "details": {
+        "time": 0.4907999999999999,
+        "firstImpact": 0.6931867346753782
+      }
+    },
+    {
+      "name": "Real surface impact awards one hit, bends the target and shows a water flash, splash and +1",
+      "passed": true,
+      "details": {
+        "shotId": 1,
+        "targetId": "normal",
+        "point": [
+          -1.7379152914104774,
+          0.5612347042863033,
+          -1.5427905468553444
+        ],
+        "time": 0.7408000000000001
+      }
+    },
+    {
+      "name": "A full stream scores once, finishes in Idle and leaves no persistent hit effect",
+      "passed": true
+    },
+    {
+      "name": "All three target models receive hits, and repeated fire input cannot stack a shot",
+      "passed": true,
+      "details": [
+        {
+          "id": "moving",
+          "total": 2
+        },
+        {
+          "id": "heavy",
+          "total": 3
+        }
+      ]
+    },
+    {
+      "name": "Returning to movement interrupts the shot and prevents a delayed ghost hit",
+      "passed": true
+    },
+    {
+      "name": "Grass, cottage obstruction and out-of-range aiming never award phantom target hits",
+      "passed": true,
+      "details": {
+        "wall": [
+          0.2109375,
+          0.44545176080959925,
+          -4.400000000000101
+        ],
+        "far": {
+          "reachable": false,
+          "clear": false,
+          "range": 12.872409487858112,
+          "angle": 0.21724161996228425,
+          "contact": [
+            -0.0002827347683945697,
+            0.021484374999999972,
+            -1.9338992646124886
+          ],
+          "blocked": false
+        }
+      }
+    },
+    {
+      "name": "Escape clears a target lock; grass clicks always resume walking without a mode switch",
+      "passed": true
+    },
+    {
+      "name": "Touch target selection and the on-screen fire button work above a compact mobile panel",
+      "passed": true,
+      "details": {
+        "reticle": {
+          "x": 134.046875,
+          "y": 325.59375,
+          "width": 38,
+          "height": 38
+        },
+        "panel": {
+          "x": 16,
+          "y": 714,
+          "width": 236,
+          "height": 112
+        }
+      }
+    },
+    {
+      "name": "Repeated shots reuse GPU assets and keep the garden free of trajectory and route lines",
+      "passed": true,
+      "details": {
+        "before": {
+          "geometries": 107,
+          "textures": 9,
+          "programs": 27
+        },
+        "after": {
+          "geometries": 107,
+          "textures": 9,
+          "programs": 27
+        }
+      }
+    },
+    {
+      "name": "Score reset and scene changes clear aim safely; no browser errors or warnings",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

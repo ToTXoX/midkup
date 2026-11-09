@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-11-04T08:48:26.424Z",
+  "browser": "156.0.4314.58",
+  "checks": [
+    {
+      "name": "A small local disturbance propagates across the actual heightfield and decays to calm water",
+      "passed": true
+    },
+    {
+      "name": "Actual pond click walks to the cleared bank, then enters with a pooled cartoon splash animation",
+      "passed": true
+    },
+    {
+      "name": "Arrival uses a buoyant SwimIdle loop instead of walking or standing on the pool",
+      "passed": true
+    },
+    {
+      "name": "Swimming retargets inside a body-sized safe ellipse; pause freezes buoyancy, stroke and water FX",
+      "passed": true
+    },
+    {
+      "name": "Water skill can fire afloat and blends back into SwimIdle",
+      "passed": true
+    },
+    {
+      "name": "A grass destination climbs out through the bank and resumes normal navigation",
+      "passed": true
+    },
+    {
+      "name": "Tapping water again during exit safely queues a return without teleporting",
+      "passed": true
+    },
+    {
+      "name": "Basket interaction exits the pond first and completes a full meal on land",
+      "passed": true
+    },
+    {
+      "name": "Stage exposes both portable swim clips; scene cleanup and phone touch entry work",
+      "passed": true
+    },
+    {
+      "name": "A fresh phone viewport selects the smaller 64-square simulation and supports native touch entry",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

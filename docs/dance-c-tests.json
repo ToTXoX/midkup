@@ -1,0 +1,87 @@
+{
+  "passed": true,
+  "checks": [
+    "One full turn with 24 alternating steps, three supporting paws and no visible contact sliding",
+    "Two introductory taps, a small finishing hop and no ground penetration",
+    "Original eye atlas supplies the smile; pausing, seeking and interruption preserve the correct expression",
+    "C ends once, restores open eyes and transitions back to Idle",
+    "Preview can still be rotated without selecting the page",
+    "Twelve action buttons and the happy pose remain visible on phones"
+  ],
+  "data": {
+    "minimumY": -0.00043896568280512704,
+    "slide": 1.655086154963022e-7,
+    "contactRotation": 0.0008321921361423209,
+    "groundSamples": 744,
+    "turn": 6.283185067188043,
+    "maxTurnStep": 0.02770504440419645,
+    "maxLifted": 1,
+    "counts": {
+      "LHand": 6,
+      "RHand": 6,
+      "LFoot": 6,
+      "RFoot": 6
+    },
+    "tapA": 0.01596516682581759,
+    "tapB": 0.015960067921795697,
+    "jump": [
+      0.07197784590134251,
+      0.0719778698671667,
+      0.07197786033796574,
+      0.0719778609817934
+    ]
+  },
+  "expression": {
+    "before": {
+      "state": "open",
+      "maps": 1,
+      "offsets": [
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    "happy": {
+      "state": "happy",
+      "maps": 1,
+      "offsets": [
+        [
+          0.5,
+          0.25
+        ]
+      ]
+    },
+    "paused": {
+      "state": "happy",
+      "maps": 1,
+      "offsets": [
+        [
+          0.5,
+          0.25
+        ]
+      ]
+    },
+    "interrupted": {
+      "state": "open",
+      "maps": 1,
+      "offsets": [
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    "end": {
+      "state": "open",
+      "maps": 1,
+      "offsets": [
+        [
+          0,
+          0
+        ]
+      ]
+    }
+  },
+  "errors": []
+}

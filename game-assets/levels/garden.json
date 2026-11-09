@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 1,
+  "units": "meters",
+  "up": "+Y",
+  "forward": "+Z",
+  "spawn": {
+    "position": [
+      0.0,
+      0.025049,
+      1.263719
+    ],
+    "yaw": 0.3490658503988659
+  },
+  "camera": {
+    "position": [
+      3.244914,
+      18.414135,
+      17.139101
+    ],
+    "target": [
+      0.0,
+      0.368585,
+      -1.263719
+    ],
+    "fov": 20
+  },
+  "targets": [
+    {
+      "id": "normal",
+      "asset": "props/target-normal.glb",
+      "position": [
+        -1.737614,
+        0.0,
+        -1.632304
+      ],
+      "hit": {
+        "center": [
+          -0.0,
+          0.562007,
+          -0.0
+        ],
+        "radius": 0.2896023392677307,
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "id": "moving",
+      "asset": "props/target-moving.glb",
+      "position": [
+        0.0,
+        0.0,
+        -2.632748
+      ],
+      "hit": {
+        "center": [
+          0.0,
+          0.66419,
+          -0.0
+        ],
+        "radius": 0.26327481865882874,
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "id": "heavy",
+      "asset": "props/target-heavy.glb",
+      "position": [
+        1.632304,
+        0.0,
+        -1.842924
+      ],
+      "hit": {
+        "center": [
+          0.0,
+          0.613099,
+          -0.0
+        ],
+        "radius": 0.3685847520828247,
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "colliders": [
+    {
+      "id": "cottage",
+      "type": "box",
+      "min": [
+        -2.843368,
+        0.16323,
+        -5.765718
+      ],
+      "max": [
+        0.21062,
+        1.584914,
+        -3.606865
+      ]
+    },
+    {
+      "id": "Village fence rail 00 0.25",
+      "type": "box",
+      "min": [
+        -4.351933,
+        0.0,
+        -1.421684
+      ],
+      "max": [
+        -4.283481,
+        0.7,
+        0.21062
+      ]
+    },
+    {
+      "id": "Village fence rail 01 0.25",
+      "type": "box",
+      "min": [
+        -4.351933,
+        0.0,
+        -3.053988
+      ],
+      "max": [
+        -4.283481,
+        0.7,
+        -1.421684
+      ]
+    },
+    {
+      "id": "Village fence rail 02 0.25",
+      "type": "box",
+      "min": [
+        -4.351933,
+        0.0,
+        -4.686292
+      ],
+      "max": [
+        -4.283481,
+        0.7,
+        -3.053988
+      ]
+    },
+    {
+      "id": "Village fence rail 03 0.25",
+      "type": "box",
+      "min": [
+        -4.351933,
+        0.0,
+        -6.318596
+      ],
+      "max": [
+        -4.283481,
+        0.7,
+        -4.686292
+      ]
+    },
+    {
+      "id": "Village fence rail 04 0.25",
+      "type": "box",
+      "min": [
+        -4.317707,
+        0.0,
+        -6.352822
+      ],
+      "max": [
+        -2.874961,
+        0.7,
+        -6.28437
+      ]
+    },
+    {
+      "id": "Village fence rail 05 0.25",
+      "type": "box",
+      "min": [
+        -2.874961,
+        0.0,
+        -6.352822
+      ],
+      "max": [
+        -1.442746,
+        0.7,
+        -6.28437
+      ]
+    },
+    {
+      "id": "Village fence rail 06 0.25",
+      "type": "box",
+      "min": [
+        -1.442746,
+        0.0,
+        -6.352822
+      ],
+      "max": [
+        0.0,
+        0.7,
+        -6.28437
+      ]
+    },
+    {
+      "id": "Village fence rail 07 0.25",
+      "type": "box",
+      "min": [
+        0.0,
+        0.0,
+        -6.352822
+      ],
+      "max": [
+        1.442746,
+        0.7,
+        -6.28437
+      ]
+    },
+    {
+      "id": "Village fence rail 08 0.25",
+      "type": "box",
+      "min": [
+        1.442746,
+        0.0,
+        -6.352822
+      ],
+      "max": [
+        2.874961,
+        0.7,
+        -6.28437
+      ]
+    },
+    {
+      "id": "Village fence rail 09 0.25",
+      "type": "box",
+      "min": [
+        2.874961,
+        0.0,
+        -6.352822
+      ],
+      "max": [
+        4.317707,
+        0.7,
+        -6.28437
+      ]
+    },
+    {
+      "id": "Village fence rail 10 0.25",
+      "type": "box",
+      "min": [
+        4.283481,
+        0.0,
+        -6.318595
+      ],
+      "max": [
+        4.351933,
+        0.7,
+        -4.633637
+      ]
+    },
+    {
+      "id": "Village fence rail 11 0.25",
+      "type": "box",
+      "min": [
+        4.283481,
+        0.0,
+        -4.633637
+      ],
+      "max": [
+        4.351933,
+        0.7,
+        -2.948678
+      ]
+    },
+    {
+      "id": "Village fence rail 12 0.25",
+      "type": "box",
+      "min": [
+        4.283481,
+        0.0,
+        -2.948678
+      ],
+      "max": [
+        4.351933,
+        0.7,
+        -1.263719
+      ]
+    },
+    {
+      "id": "Planting 01 left main tree",
+      "type": "circle",
+      "center": [
+        -3.791157,
+        -5.770984
+      ],
+      "radius": 0.1129
+    },
+    {
+      "id": "Planting 02 left companion pine",
+      "type": "circle",
+      "center": [
+        -4.191335,
+        -4.317707
+      ],
+      "radius": 0.0996
+    },
+    {
+      "id": "Planting 03 left young tree",
+      "type": "circle",
+      "center": [
+        -4.03337,
+        -2.843368
+      ],
+      "radius": 0.075
+    },
+    {
+      "id": "Planting 04 low waterside tree",
+      "type": "circle",
+      "center": [
+        3.317263,
+        -1.948234
+      ],
+      "radius": 0.075
+    },
+    {
+      "id": "Planting 05 right main small pine",
+      "type": "circle",
+      "center": [
+        2.790713,
+        -5.918418
+      ],
+      "radius": 0.0956
+    },
+    {
+      "id": "Planting 06 right companion small pine",
+      "type": "circle",
+      "center": [
+        3.475228,
+        -5.739391
+      ],
+      "radius": 0.075
+    },
+    {
+      "id": "Planting 07 right young small pine",
+      "type": "circle",
+      "center": [
+        3.791157,
+        -5.160187
+      ],
+      "radius": 0.075
+    },
+    {
+      "id": "pond",
+      "type": "ellipse",
+      "center": [
+        3.5278825759887695,
+        0.3159298002719879
+      ],
+      "radii": [
+        0.8069901466369629,
+        1.1440870463848114
+      ]
+    }
+  ],
+  "walkableBounds": {
+    "min": [
+      -4.358946914672852,
+      -6.465144271850586
+    ],
+    "max": [
+      4.358946914672852,
+      3.83239709854126
+    ],
+    "actorRadius": 0.4,
+    "note": "Ground bounds for the character center are inset by actorRadius and navigation.skin at runtime."
+  },
+  "navigation": {
+    "actorRadius": 0.4,
+    "skin": 0.04,
+    "cellSize": 0.16,
+    "pondShore": 0.12
+  }
+}

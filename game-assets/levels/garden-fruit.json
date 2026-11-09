@@ -1,0 +1,29 @@
+{
+  "basket": ["berry", "apple", "orange", "plum"],
+  "trees": [
+    {
+      "id": "apple-tree",
+      "name": "苹果树",
+      "material": "Planting unified forest",
+      "fruit": "apple",
+      "fruitScale": 0.70,
+      "placements": [
+        { "branch": [-4.084, 0.882, -2.626], "landing": [-3.53, -2.25] },
+        { "branch": [-3.868, 0.947, -2.812], "landing": [-3.23, -2.77] },
+        { "branch": [-3.795, 0.673, -2.710], "landing": [-3.08, -2.47] }
+      ]
+    },
+    {
+      "id": "orange-tree",
+      "name": "橘子树",
+      "material": "Planting unified forest.003",
+      "fruit": "orange",
+      "fruitScale": 0.72,
+      "placements": [
+        { "branch": [2.919, 1.056, -2.065], "landing": [2.67, -2.04] },
+        { "branch": [3.263, 1.197, -1.891], "landing": [2.54, -1.72] },
+        { "branch": [3.139, 1.041, -1.553], "landing": [2.80, -1.39] }
+      ]
+    }
+  ]
+}

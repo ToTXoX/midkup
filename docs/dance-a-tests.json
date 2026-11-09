@@ -1,0 +1,76 @@
+{
+  "passed": true,
+  "checks": [
+    "Direct preview opens DanceA and selects its button",
+    "4-second loop, planted flat paws with no ankle twisting, 8 cm hop and small side steps",
+    "Button switches from Idle and continues into another dance loop",
+    "Dance button remains visible on a 390 px mobile viewport"
+  ],
+  "data": {
+    "duration": 4,
+    "seam": 5.944215728179948e-8,
+    "minimumVertexY": 0.0010131455722113512,
+    "maximumFootRotation": 0.000021195570079806396,
+    "initialMinimumY": 0.00101314924940579,
+    "minimumSamples": [
+      [
+        0.25,
+        0.0010131851651256274
+      ],
+      [
+        0.75,
+        0.001013180613209116
+      ],
+      [
+        1.23,
+        0.001013171981528286
+      ],
+      [
+        1.73,
+        0.0010131777386068724
+      ],
+      [
+        2.15,
+        0.0010131630813947088
+      ],
+      [
+        2.38,
+        0.001013047117991322
+      ],
+      [
+        2.64,
+        0.0010130939211960678
+      ],
+      [
+        2.88,
+        0.001013089297121083
+      ],
+      [
+        3.22,
+        0.001013163420090832
+      ],
+      [
+        3.51,
+        0.0814163472816879
+      ],
+      [
+        3.8,
+        0.0010131705665046477
+      ]
+    ],
+    "planted": [
+      3.627070339727391e-8,
+      5.8935685252869856e-8,
+      5.6815204006389515e-8,
+      2.726369291519776e-8
+    ],
+    "airborne": [
+      0.08197934983088004,
+      0.08197936948915747,
+      0.08197935458186087,
+      0.0819793390533829
+    ],
+    "maximumRootSideways": 0.027357283979654312
+  },
+  "errors": []
+}

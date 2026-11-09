@@ -1,0 +1,99 @@
+{
+  "timestamp": "2026-11-03T09:01:16.811Z",
+  "browser": "156.0.4314.58",
+  "checks": [
+    {
+      "name": "Actual canvas click turns and moves the character, then returns to Idle",
+      "passed": true,
+      "details": [
+        1.00205332765217,
+        0.026484375,
+        1.8154718312167546
+      ]
+    },
+    {
+      "name": "A* route walks around targets without tunneling and stays on uneven terrain",
+      "passed": true,
+      "details": {
+        "waypoints": [
+          {
+            "x": 0.8797635930898244,
+            "z": -2.353899330850375
+          },
+          {
+            "x": 2,
+            "z": -4
+          }
+        ],
+        "length": 5.714180613881709,
+        "samples": 700
+      }
+    },
+    {
+      "name": "Clicking house resolves to reachable ground",
+      "passed": true,
+      "details": {
+        "goal": {
+          "x": -1.3596346438660913,
+          "z": -3.1519960571547685
+        },
+        "samples": 900
+      }
+    },
+    {
+      "name": "Clicking pond resolves to reachable ground",
+      "passed": true,
+      "details": {
+        "goal": {
+          "x": 2.1594197284932046,
+          "z": 0.3596295385845636
+        },
+        "samples": 900
+      }
+    },
+    {
+      "name": "Clicking tree resolves to reachable ground",
+      "passed": true,
+      "details": {
+        "goal": {
+          "x": -3.5990328808220067,
+          "z": -5.227047545546192
+        },
+        "samples": 900
+      }
+    },
+    {
+      "name": "Clicking edge resolves to reachable ground",
+      "passed": true,
+      "details": {
+        "goal": {
+          "x": 3.9189469146728517,
+          "z": 3.3923970985412595
+        },
+        "samples": 900
+      }
+    },
+    {
+      "name": "Pause, gait changes and new destinations preserve a valid movement state",
+      "passed": true
+    },
+    {
+      "name": "Dragging the camera does not issue a walk command",
+      "passed": true
+    },
+    {
+      "name": "Touch movement and mobile framing work without horizontal overflow",
+      "passed": true,
+      "details": {
+        "x": 169.1731786117899,
+        "y": 427.5269925946867
+      }
+    },
+    {
+      "name": "Switching between the animation stage and garden resets travel safely",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,32 @@
+{
+  "source": "mudkip-garden-v11-perspective.blend",
+  "source_visible_objects": 365,
+  "export_groups": 10,
+  "vertices": 84582,
+  "triangles": 157071,
+  "color_layers": {
+    "Terrain_Base": 1,
+    "NAV_Ground": 1,
+    "Pond_Water": 1,
+    "Pond_Details": 1,
+    "Basket": 1,
+    "Flowers_Grass": 1,
+    "Target_Rail": 1,
+    "Cottage": 1,
+    "Fence_Path": 1,
+    "Planting": 1
+  },
+  "colliders": 22,
+  "objects": [
+    "Terrain_Base",
+    "NAV_Ground",
+    "Pond_Water",
+    "Pond_Details",
+    "Basket",
+    "Flowers_Grass",
+    "Target_Rail",
+    "Cottage",
+    "Fence_Path",
+    "Planting"
+  ]
+}

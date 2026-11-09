@@ -1,0 +1,55 @@
+{
+  "source": "C:\\Users\\qiank\\Desktop\\apprun\\3d\\mudkip\\mudkip-toon-v08.blend",
+  "engine": "BLENDER_EEVEE",
+  "vertices": 1676,
+  "triangles": 3344,
+  "bones": 25,
+  "actions": [
+    "Eat",
+    "Idle",
+    "PetReaction",
+    "Run",
+    "Walk",
+    "WaterCharge",
+    "WaterShoot"
+  ],
+  "unchangedTopology": true,
+  "toonBands": 3,
+  "outlineSamples": [
+    {
+      "clip": "Idle",
+      "frame": 1,
+      "maximumOutlineOffsetMeters": 0.002800125242679246
+    },
+    {
+      "clip": "Run",
+      "frame": 5,
+      "maximumOutlineOffsetMeters": 0.0028000787153481498
+    },
+    {
+      "clip": "Eat",
+      "frame": 18,
+      "maximumOutlineOffsetMeters": 0.002800072772960859
+    },
+    {
+      "clip": "WaterCharge",
+      "frame": 8,
+      "maximumOutlineOffsetMeters": 0.0028000561364931956
+    },
+    {
+      "clip": "WaterShoot",
+      "frame": 13,
+      "maximumOutlineOffsetMeters": 0.002800098382168473
+    }
+  ],
+  "textures": [
+    {
+      "name": "pm0258_00_Body1.png",
+      "packed": true
+    },
+    {
+      "name": "pm0258_00_Eye1.png",
+      "packed": true
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-11-09T03:45:40.570Z",
+  "checks": [
+    {
+      "name": "A single click of the always-available skill casts freely without selecting a target or mode",
+      "passed": true
+    },
+    {
+      "name": "Dragging the skill shows a free aim point; releasing outside the button casts once and never rotates the camera",
+      "passed": true
+    },
+    {
+      "name": "Esc cancels an active drag without firing or leaving a captured pointer",
+      "passed": true
+    },
+    {
+      "name": "Optional target lock still works with the same skill key and real impact feedback",
+      "passed": true
+    },
+    {
+      "name": "Pause disables both the skill button and keyboard casting",
+      "passed": true
+    },
+    {
+      "name": "Phone users can tap an 82-pixel skill key to spray freely, with no target or keyboard",
+      "passed": true,
+      "details": {
+        "mobile": {
+          "x": 279,
+          "y": 706,
+          "width": 82,
+          "height": 82
+        },
+        "panel": {
+          "x": 16,
+          "y": 714,
+          "width": 236,
+          "height": 112
+        }
+      }
+    },
+    {
+      "name": "Native touch dragging captures the finger outside the key, previews aim and casts only on release",
+      "passed": true
+    },
+    {
+      "name": "A native touch cancellation restores controls and never fires a ghost shot",
+      "passed": true
+    },
+    {
+      "name": "On phones, optional lock-and-tap hits a target, and the next ground tap immediately resumes walking",
+      "passed": true
+    },
+    {
+      "name": "Enter and Space each cast exactly once when the skill key has keyboard focus",
+      "passed": true
+    },
+    {
+      "name": "Scene changes clear a held skill safely, with no console errors or warnings",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

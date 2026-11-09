@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 1,
+  "version": "0.21.11",
+  "units": "meters",
+  "up": "+Y",
+  "characterForward": "+Z",
+  "character": "characters/mudkip/mudkip.glb",
+  "animations": "characters/mudkip/animations.json",
+  "environment": "environments/garden.glb",
+  "level": "levels/garden.json",
+  "effects": {
+    "waterGun": "fx/water-gun.js",
+    "pond": "fx/pond-water.js",
+    "tackle": "fx/tackle-effects.js",
+    "mud": "fx/mud-effects.js"
+  },
+  "rendering": {
+    "style": "rendering/toon-style.js",
+    "readme": "rendering/README.md",
+    "expressions": "rendering/eye-expressions.js",
+    "cottageMeadow": "rendering/garden-meadow.js",
+    "windChime": "rendering/garden-wind-chime.js"
+  },
+  "gameplay": {
+    "swimming": "gameplay/garden-swimming.js",
+    "navigation": "gameplay/garden-navigation.js",
+    "destination": "gameplay/destination-marker.js",
+    "aim": "gameplay/water-aim.js",
+    "combat": "gameplay/garden-combat.js",
+    "hitFeedback": "gameplay/target-feedback.js",
+    "skillInput": "gameplay/water-skill-input.js",
+    "fruit": "gameplay/garden-fruit.js",
+    "footprints": "gameplay/garden-footprints.js",
+    "tackle": "gameplay/garden-tackle.js",
+    "mud": "gameplay/garden-mud.js"
+  },
+  "props": {
+    "berry": "props/berry.glb",
+    "targets": {
+      "normal": "props/target-normal.glb",
+      "moving": "props/target-moving.glb",
+      "heavy": "props/target-heavy.glb"
+    }
+  },
+  "credits": "CREDITS.md",
+  "files": [
+    {
+      "path": "characters/mudkip/mudkip.glb",
+      "bytes": 1294388,
+      "sha256": "57174be11978f1dbd1683cd99206565666ac5db1b9d32b0746c5b2ad69d83738",
+      "meshes": 1,
+      "primitives": 2,
+      "triangles": 3344,
+      "animations": [
+        "DanceA",
+        "DanceB",
+        "DanceC",
+        "Eat",
+        "Idle",
+        "PetReaction",
+        "Run",
+        "Swim",
+        "SwimIdle",
+        "Walk",
+        "WaterCharge",
+        "WaterShoot"
+      ],
+      "colorPrimitives": 0
+    },
+    {
+      "path": "characters/mudkip/animations.json",
+      "bytes": 7943,
+      "sha256": "f346bbe1dbe15207532461c24677c863836bfa2dbeff1c53116c2dd0c584b91b"
+    },
+    {
+      "path": "environments/garden.glb",
+      "bytes": 2601896,
+      "sha256": "db68829562e4467e0a5655128385153e80438cea4e215e1791155082360f5244",
+      "meshes": 10,
+      "primitives": 50,
+      "triangles": 157071,
+      "animations": [],
+      "colorPrimitives": 50
+    },
+    {
+      "path": "props/berry.glb",
+      "bytes": 32464,
+      "sha256": "38cadcd1fdf3ce496724d404010e847f40b170fcda040118eb79e41458c8b7df",
+      "meshes": 2,
+      "primitives": 2,
+      "triangles": 880,
+      "animations": [],
+      "colorPrimitives": 2
+    },
+    {
+      "path": "props/target-normal.glb",
+      "bytes": 196424,
+      "sha256": "52afb5cb775fbcc5acd332eb4134d7edf072e7f8523b4e6055d7d2d38d305c37",
+      "meshes": 8,
+      "primitives": 8,
+      "triangles": 3520,
+      "animations": [],
+      "colorPrimitives": 8
+    },
+    {
+      "path": "props/target-moving.glb",
+      "bytes": 224324,
+      "sha256": "f77d035966c21a6a798ab0d5e5edd4eac8c9c10cb4d98e9bed6b254b33fa7c51",
+      "meshes": 10,
+      "primitives": 10,
+      "triangles": 4400,
+      "animations": [],
+      "colorPrimitives": 10
+    },
+    {
+      "path": "props/target-heavy.glb",
+      "bytes": 233264,
+      "sha256": "1e4e2501b1ef0805050a36634fd921eb953052a10e62766297ab1bd285fc017d",
+      "meshes": 11,
+      "primitives": 11,
+      "triangles": 3899,
+      "animations": [],
+      "colorPrimitives": 11
+    },
+    {
+      "path": "levels/garden.json",
+      "bytes": 6781,
+      "sha256": "950f7baa2a4765376c73c64f469bf30b6ad1bb8e494f1ebe4cc50c22cc0cbcbb"
+    },
+    {
+      "path": "fx/water-gun.js",
+      "bytes": 22932,
+      "sha256": "2f09a7473f1571f49a150e62f3842a1051bf5f2276c8c7fae64f74b280e42add"
+    },
+    {
+      "path": "fx/pond-water.js",
+      "bytes": 12031,
+      "sha256": "2f1e05e9400effdf8bcb322d758f16d02e30836c199ab616fda1e5dd01efb757"
+    },
+    {
+      "path": "fx/README.md",
+      "bytes": 6653,
+      "sha256": "7a58dc3d20957dc979ed5b3565af433c1b7960be6b36d6b10f6a40b7333b4461"
+    },
+    {
+      "path": "rendering/toon-style.js",
+      "bytes": 3784,
+      "sha256": "3990d214e692f85c6fd86759e9d08e27e157c151f64d750a89d2a9407c546ac7"
+    },
+    {
+      "path": "rendering/README.md",
+      "bytes": 2583,
+      "sha256": "5ae27c1aa8a8dc7c2e7136700d435cb23963aec9c6b76eaff787be1c1b3112dd"
+    },
+    {
+      "path": "gameplay/garden-swimming.js",
+      "bytes": 6537,
+      "sha256": "92c8428cd0391d98cb8b8cb08fcf670c7a62d6b9e55cb3c0bc690b3424374969"
+    },
+    {
+      "path": "gameplay/garden-navigation.js",
+      "bytes": 10172,
+      "sha256": "357560f9b6f7ab7d3317c8b15d97fc097b600267c73d05dde7ac092bd5c07aaa"
+    },
+    {
+      "path": "gameplay/destination-marker.js",
+      "bytes": 3209,
+      "sha256": "69757b0319d1bfbf55fdb711cbb53fc7d3c5b732c9353eccfc91127eabe10a1c"
+    },
+    {
+      "path": "gameplay/water-aim.js",
+      "bytes": 1163,
+      "sha256": "71327cadc822d18c3f07357904b2c3bb20d146a3252ca6a500aa77f04aef4aa0"
+    },
+    {
+      "path": "gameplay/garden-combat.js",
+      "bytes": 5078,
+      "sha256": "c9837cbf1d8d48fc9de54fc13248ba8175af2d500c957e21463bd4c570aab3b3"
+    },
+    {
+      "path": "gameplay/target-feedback.js",
+      "bytes": 2647,
+      "sha256": "90b41840335467a61f1297564a97e121724c7a615920db8a8d94a57043bc444e"
+    },
+    {
+      "path": "gameplay/water-skill-input.js",
+      "bytes": 2456,
+      "sha256": "452c8d79492581fbf8f1a24c8175199b58400424558fb0a7c4808e1ea3b7aed0"
+    },
+    {
+      "path": "gameplay/README.md",
+      "bytes": 10023,
+      "sha256": "2fd489b655be8e7931cdf69acac2efb291962986fc0abdccb2598266a534e45a"
+    },
+    {
+      "path": "fx/pond-lily.js",
+      "bytes": 9365,
+      "sha256": "1d0384abcd9b8737be15aeb5af7e387c0a3f39bbb199b7a208c1663d221c426b"
+    },
+    {
+      "path": "fx/tackle-effects.js",
+      "bytes": 6069,
+      "sha256": "32a0516d9912fb1c93feb827f686386b43fe666698e3b74b57e2aea995f22379"
+    },
+    {
+      "path": "fx/mud-effects.js",
+      "bytes": 9446,
+      "sha256": "d1396088de36da09206054fbfb003adfcaefd831ff40df469ff49c18a1595115"
+    },
+    {
+      "path": "fx/comic-texture.js",
+      "bytes": 812,
+      "sha256": "432f9e21af08814207abd505afac90ec5a7035273e6fb794617f2fdc3d34f16a"
+    },
+    {
+      "path": "fx/pond-simulation.js",
+      "bytes": 5308,
+      "sha256": "b905ba6841a3496b94b522ef84f98cc840c33fdad792d2fa990fd19535788443"
+    },
+    {
+      "path": "fx/vendor/water-reference.js",
+      "bytes": 11942,
+      "sha256": "d89b6576dd465de1df6f5b4218925c3155ad1db99c976932cb0a9e290ced90b7"
+    },
+    {
+      "path": "fx/vendor/water-LICENSE.txt",
+      "bytes": 1124,
+      "sha256": "f50bbc0f2cbca1fb64d0e6133329a309a88bd6bfd92b80fcb103119aca3e0e1c"
+    },
+    {
+      "path": "fx/cartoon-splash.js",
+      "bytes": 3329,
+      "sha256": "6900b630b5d70d84b7895c67ab436bac7980127d25e0ce7085fda447d7a0016b"
+    },
+    {
+      "path": "fx/textures/cartoon-splash-v14.png",
+      "bytes": 699601,
+      "sha256": "2ddf629b2b5a4165b2c1182ec98a43cb7bad1fd91e8bac2cac3eb87926b695f8"
+    },
+    {
+      "path": "fx/textures/cartoon-splash-v14.json",
+      "bytes": 742,
+      "sha256": "8e0fea90f5c940bb1e1e933a7e84906d6f96940dce5f2b29040b5738edeb83a5"
+    },
+    {
+      "path": "rendering/eye-expressions.js",
+      "bytes": 1047,
+      "sha256": "41cdabefdf45278bcd51598d29c92074c529a98f8894dcaaaa0b0641ca5d7a4f"
+    },
+    {
+      "path": "rendering/garden-meadow.js",
+      "bytes": 5098,
+      "sha256": "3cfa0544477d3055cf9dfb9a39ca0dc6d2823709c17777a1720d4e63bee77905"
+    },
+    {
+      "path": "rendering/garden-butterfly.js",
+      "bytes": 7944,
+      "sha256": "d6e5c5cd142f538256e7228463397e40cfc25242b8071c1eac551045e25d9c34"
+    },
+    {
+      "path": "rendering/garden-wind-chime.js",
+      "bytes": 6415,
+      "sha256": "90321214dec3f7e64a2da0714d8ef20eda0018a53fad8ab9c14c643e257c2038"
+    },
+    {
+      "path": "gameplay/garden-fruit.js",
+      "bytes": 8775,
+      "sha256": "de901a963fc57ede7f39dd74ea25e43d6bd4ab94a2d1595eec18163c82b09a0f"
+    },
+    {
+      "path": "levels/garden-fruit.json",
+      "bytes": 894,
+      "sha256": "919a4afa36005c5afd1c9ae0407754894da6b4e176c8cba455763b74c723e0fb"
+    },
+    {
+      "path": "gameplay/garden-footprints.js",
+      "bytes": 6141,
+      "sha256": "0fc7b6733650fb2625f556a8f85a020b4b051a65a5e651d61cea0aac686ef09e"
+    },
+    {
+      "path": "gameplay/garden-tackle.js",
+      "bytes": 6417,
+      "sha256": "240964e8b270b02216761376610b7d4ec843d936a5db890fab1d6e2565b47aec"
+    },
+    {
+      "path": "gameplay/garden-mud.js",
+      "bytes": 5217,
+      "sha256": "8337d969b811780962ac16ff5fc98d179384bd26f77fba9342283a1895812f20"
+    },
+    {
+      "path": "gameplay/garden-action-pose.js",
+      "bytes": 4519,
+      "sha256": "556da093ccd64a2b0cd4a0d1c989d683e3c3e88a5d98771a4d0f730e231041cb"
+    }
+  ],
+  "fruitLevel": "levels/garden-fruit.json"
+}

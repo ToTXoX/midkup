@@ -1,0 +1,47 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "Desktop rotation after Select All",
+      "entry": "index.html",
+      "change": 3.3135349775038683
+    },
+    {
+      "name": "Desktop rotation after Select All",
+      "entry": "resources.html?clip=Run",
+      "change": 3.2446007050976067
+    },
+    {
+      "name": "Desktop rotation after Select All",
+      "entry": "resources.html?scene=garden",
+      "change": 10.566132643365679
+    },
+    {
+      "name": "A missed release recovers on mouse hover, without a shot",
+      "change": 10.566132643365679
+    },
+    {
+      "name": "Rotation recovers after window blur",
+      "change": 8.442328728651075
+    },
+    {
+      "name": "Rotation recovers after cancelling aim",
+      "change": 5.009628979947564
+    },
+    {
+      "name": "Resizing cancels aim and restores rotation",
+      "change": 12.013118763346316
+    },
+    {
+      "name": "Returning to the stage clears the camera lock",
+      "change": 3.769616125731015
+    },
+    {
+      "name": "Native phone touch rotates the stage without selecting text"
+    },
+    {
+      "name": "Native phone touch also rotates the garden"
+    }
+  ],
+  "errors": []
+}

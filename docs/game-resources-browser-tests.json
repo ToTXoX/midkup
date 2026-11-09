@@ -1,0 +1,222 @@
+{
+  "browser": "157.0.4341.42",
+  "timestamp": "2026-11-09T05:54:11.757Z",
+  "checks": [
+    {
+      "name": "All twelve animation clips, compressed garden, vertex colors and separate props load",
+      "passed": true,
+      "details": {
+        "groups": 10,
+        "renderMeshes": 48,
+        "vertexColorMeshes": 47,
+        "proceduralWaterMeshes": 1,
+        "targets": 3,
+        "colliders": 22,
+        "view": "stage",
+        "pond": {
+          "time": 0,
+          "height": -0.0390625,
+          "center": [
+            3.5278825759887695,
+            0.3159298002719879
+          ],
+          "radii": [
+            0.8069901466369629,
+            1.1440870463848114
+          ],
+          "clearedStones": 2,
+          "ripples": 0,
+          "crestLimit": 3,
+          "foam": 0,
+          "droplets": 0,
+          "cartoonSplash": {
+            "active": 0,
+            "frames": [],
+            "positions": [],
+            "poolSize": 2,
+            "total": 0,
+            "counts": {
+              "entry": 0,
+              "exit": 0
+            },
+            "frameCount": 16,
+            "columns": 4,
+            "rows": 4,
+            "mode": "transparent-flipbook"
+          },
+          "shader": "heightfield-refractive-toon",
+          "simulation": {
+            "size": 96,
+            "steps": 0,
+            "displacements": 0,
+            "renderTargets": 2,
+            "method": "heightfield-ping-pong",
+            "fixedStep": 0.008333333333333333
+          },
+          "extraRenderTargets": 3,
+          "refractionSize": [
+            512,
+            512
+          ]
+        },
+        "mouth": [
+          0.0007580783008425646,
+          0.3495379035732399,
+          0.4064053424651891
+        ],
+        "direction": [
+          -0.000027178246193404845,
+          -0.0026065518788913706,
+          0.9999966025685516
+        ],
+        "food": false,
+        "eating": {
+          "phase": null,
+          "crumbs": 0,
+          "hearts": 0
+        },
+        "orb": false,
+        "water": false,
+        "waterEffect": {
+          "phase": "idle",
+          "emitting": false,
+          "stream": false,
+          "crown": false,
+          "ripples": 0,
+          "flightDrops": 0,
+          "splashDrops": 0,
+          "active": false,
+          "tail": false,
+          "pooledMeshes": 32,
+          "streamVertices": 645,
+          "launchOrigin": [
+            0,
+            0,
+            0
+          ],
+          "launchDirection": [
+            0,
+            0,
+            0
+          ],
+          "flightTime": 0.28
+        }
+      }
+    },
+    {
+      "name": "All clips deform and loop correctly; dance stays within 5.5 cm; Walk and Run match runtime speed",
+      "passed": true,
+      "details": {
+        "Idle": {
+          "motion": 0.025728963641722755,
+          "rootHorizontal": 0,
+          "seam": 5.364603654963579e-8
+        },
+        "Walk": {
+          "motion": 0.148653950864064,
+          "rootHorizontal": 0,
+          "seam": 0.0000013518311827165341,
+          "stanceResidual": 0.000001641319345144221,
+          "groundResidual": 0.00002566609817730714
+        },
+        "Run": {
+          "motion": 0.17142595440614694,
+          "rootHorizontal": 0,
+          "seam": 0.000002264160370940571,
+          "stanceResidual": 0.00004624871993474944,
+          "groundResidual": 0.00014091424581630374
+        },
+        "PetReaction": {
+          "motion": 0.09316264247830564,
+          "rootHorizontal": 0,
+          "seam": 2.9626451569786383e-9
+        },
+        "Eat": {
+          "motion": 0.13371612571238056,
+          "rootHorizontal": 0,
+          "seam": 4.1152892815699005e-8
+        },
+        "WaterCharge": {
+          "motion": 0.009800675938763881,
+          "rootHorizontal": 0,
+          "seam": 6.47094740291454e-8
+        },
+        "WaterShoot": {
+          "motion": 0.10581937449988976,
+          "rootHorizontal": 0,
+          "seam": 3.439784845848948e-8
+        },
+        "Swim": {
+          "motion": 0.12538000399255333,
+          "rootHorizontal": 0,
+          "seam": 0.000001282406407773773
+        },
+        "SwimIdle": {
+          "motion": 0.09479483095500148,
+          "rootHorizontal": 0,
+          "seam": 9.055276550817837e-8
+        },
+        "DanceA": {
+          "motion": 0.0972475737347003,
+          "rootHorizontal": 0.02451260877525763,
+          "seam": 5.944215728179948e-8
+        },
+        "DanceB": {
+          "motion": 0.14911059565581547,
+          "rootHorizontal": 0.005910230843818228,
+          "seam": 8.048491831336158e-9
+        },
+        "DanceC": {
+          "motion": 1.002847840792491,
+          "rootHorizontal": 0.0017280239844694734,
+          "seam": 1.6384944675835728e-7
+        }
+      }
+    },
+    {
+      "name": "Jaw stays closed during charge and anticipation, opens to fire, then closes again",
+      "passed": true,
+      "details": {
+        "charge": 0.009993021440593735,
+        "preparation": 0.009999694788966035,
+        "open": 0.3300002668448931,
+        "closedAgain": 0
+      }
+    },
+    {
+      "name": "Mouth emitter points forward; Eat attaches and consumes the berry, then returns to Idle",
+      "passed": true
+    },
+    {
+      "name": "WaterCharge holds a closed mouth with no external orb; detached water continues after emission stops",
+      "passed": true,
+      "details": {
+        "waterStart": 0.33,
+        "waterStop": 0.66
+      }
+    },
+    {
+      "name": "Garden enables collision-aware movement with compact controls; stage interactions restore correctly",
+      "passed": true
+    },
+    {
+      "name": "Run drives faster movement; interrupted clips clean up travel and effects",
+      "passed": true,
+      "details": [
+        0.46989799422925144,
+        0.005,
+        0
+      ]
+    },
+    {
+      "name": "390 px stage and garden overview render without horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "No browser errors, warnings or failed resource requests",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

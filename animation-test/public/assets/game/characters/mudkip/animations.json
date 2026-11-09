@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "samplingFPS": 120,
+  "units": "meters",
+  "up": "+Y",
+  "forward": "+Z",
+  "socket": {
+    "mouth": "Socket_Mouth",
+    "forwardAxis": "+Z"
+  },
+  "defaultTransition": 0.22,
+  "locomotionTransition": 0.12,
+  "clips": [
+    {
+      "name": "Idle",
+      "duration": 3.0,
+      "loop": true,
+      "next": null,
+      "events": []
+    },
+    {
+      "name": "Walk",
+      "duration": 0.4,
+      "loop": true,
+      "next": null,
+      "events": [
+        {
+          "time": 0.0,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 0.1,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 0.2,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 0.30000000000000004,
+          "event": "step",
+          "foot": "RFoot"
+        }
+      ]
+    },
+    {
+      "name": "Run",
+      "duration": 0.35,
+      "loop": true,
+      "next": null,
+      "events": [
+        {
+          "time": 0.0,
+          "event": "step",
+          "feet": [
+            "LHand",
+            "RFoot"
+          ]
+        },
+        {
+          "time": 0.175,
+          "event": "step",
+          "feet": [
+            "RHand",
+            "LFoot"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PetReaction",
+      "duration": 1.6,
+      "loop": false,
+      "next": "Idle",
+      "events": []
+    },
+    {
+      "name": "Eat",
+      "duration": 2.6,
+      "loop": false,
+      "next": "Idle",
+      "events": [
+        {
+          "time": 0.36,
+          "event": "food_attach"
+        },
+        {
+          "time": 0.7,
+          "event": "food_consume"
+        },
+        {
+          "time": 0.9,
+          "event": "chew"
+        },
+        {
+          "time": 1.16,
+          "event": "chew"
+        },
+        {
+          "time": 1.48,
+          "event": "chew"
+        },
+        {
+          "time": 1.72,
+          "event": "swallow"
+        },
+        {
+          "time": 2.02,
+          "event": "satisfied"
+        }
+      ]
+    },
+    {
+      "name": "WaterCharge",
+      "duration": 1.0,
+      "loop": true,
+      "next": null,
+      "events": []
+    },
+    {
+      "name": "WaterShoot",
+      "duration": 1.0,
+      "loop": false,
+      "next": "Idle",
+      "events": [
+        {
+          "time": 0.33,
+          "event": "water_start"
+        },
+        {
+          "time": 0.66,
+          "event": "water_stop"
+        }
+      ]
+    },
+    {
+      "name": "Swim",
+      "duration": 0.7166666666666667,
+      "loop": true,
+      "next": null,
+      "events": []
+    },
+    {
+      "name": "SwimIdle",
+      "duration": 2.4,
+      "loop": true,
+      "next": null,
+      "events": []
+    },
+    {
+      "name": "DanceA",
+      "duration": 4.0,
+      "loop": true,
+      "next": null,
+      "events": [
+        {
+          "time": 3.3,
+          "event": "jump_start"
+        },
+        {
+          "time": 3.72,
+          "event": "land"
+        }
+      ],
+      "label": "摇摇踏踏舞",
+      "bpm": 120,
+      "beats": 8
+    },
+    {
+      "name": "DanceB",
+      "duration": 3.0,
+      "loop": true,
+      "next": null,
+      "events": [
+        {
+          "time": 1.24,
+          "event": "curious_hold"
+        },
+        {
+          "time": 1.58,
+          "event": "dance_resume"
+        }
+      ],
+      "label": "扭扭尾巴舞",
+      "bpm": 120,
+      "beats": 6
+    },
+    {
+      "name": "DanceC",
+      "duration": 5.0,
+      "loop": false,
+      "next": "Idle",
+      "events": [
+        {
+          "time": 0.33,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 0.62,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 0.7375,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 0.8250000000000001,
+          "event": "step",
+          "foot": "RFoot"
+        },
+        {
+          "time": 0.9125000000000001,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 1.0,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 1.0875,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 1.175,
+          "event": "step",
+          "foot": "RFoot"
+        },
+        {
+          "time": 1.2625000000000002,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 1.35,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 1.4375,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 1.525,
+          "event": "step",
+          "foot": "RFoot"
+        },
+        {
+          "time": 1.6125,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 1.7000000000000002,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 1.7875,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 1.875,
+          "event": "step",
+          "foot": "RFoot"
+        },
+        {
+          "time": 1.9625,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 2.0500000000000003,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 2.1375,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 2.225,
+          "event": "step",
+          "foot": "RFoot"
+        },
+        {
+          "time": 2.3125,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 2.4,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 2.4875000000000003,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 2.575,
+          "event": "step",
+          "foot": "RFoot"
+        },
+        {
+          "time": 2.6625,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 2.75,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 2.82,
+          "event": "step",
+          "foot": "LHand"
+        },
+        {
+          "time": 2.89,
+          "event": "step",
+          "foot": "RFoot"
+        },
+        {
+          "time": 2.96,
+          "event": "step",
+          "foot": "RHand"
+        },
+        {
+          "time": 3.0300000000000002,
+          "event": "step",
+          "foot": "LFoot"
+        },
+        {
+          "time": 3.52,
+          "event": "jump_start"
+        },
+        {
+          "time": 3.9,
+          "event": "land"
+        }
+      ],
+      "label": "转圈庆祝舞"
+    }
+  ],
+  "locomotion": {
+    "Walk": {
+      "speed": 0.6607142857142856,
+      "stanceFraction": 0.56,
+      "stanceTravel": 0.148,
+      "acceleration": 5,
+      "deceleration": 5
+    },
+    "Run": {
+      "speed": 1.5446428571428572,
+      "stanceFraction": 0.32,
+      "stanceTravel": 0.173,
+      "acceleration": 10,
+      "deceleration": 9
+    }
+  },
+  "expressions": {
+    "material": "Mudkip Eyes",
+    "states": {
+      "open": {
+        "uvOffset": [
+          0,
+          0
+        ]
+      },
+      "happy": {
+        "uvOffset": [
+          0.5,
+          0.25
+        ]
+      }
+    },
+    "tracks": {
+      "DanceC": [
+        {
+          "start": 3.6,
+          "end": 4.68,
+          "state": "happy"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "checks": [
+    {
+      "passed": true,
+      "name": "Bite closes, fruit disappears at contact, three decreasing chews, closed-mouth swallow and satisfied hearts",
+      "chews": [
+        0.11499890804530899,
+        0.09415196556618656,
+        0.06311485353535697
+      ]
+    },
+    {
+      "passed": true,
+      "name": "Pause, reverse seeking, interruption and pooled effects stay correct",
+      "before": {
+        "geometries": 41,
+        "textures": 6,
+        "programs": 10
+      },
+      "after": {
+        "geometries": 41,
+        "textures": 6,
+        "programs": 10
+      }
+    }
+  ],
+  "errors": []
+}

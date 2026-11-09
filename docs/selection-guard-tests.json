@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "entry": "index.html",
+      "passed": true,
+      "checks": [
+        "Ctrl/Cmd+A",
+        "triple click and camera drag without selection",
+        "stale selection cleanup",
+        "native selection/drag prevention"
+      ]
+    },
+    {
+      "entry": "index.html",
+      "passed": true,
+      "checks": [
+        "button and slider keyboard input",
+        "single active animation button",
+        "text input Select All",
+        "contenteditable editing",
+        "explicitly selectable text"
+      ]
+    },
+    {
+      "entry": "resources.html?clip=Run",
+      "passed": true,
+      "checks": [
+        "Ctrl/Cmd+A",
+        "triple click and camera drag without selection",
+        "stale selection cleanup",
+        "native selection/drag prevention"
+      ]
+    },
+    {
+      "entry": "resources.html?clip=Run",
+      "passed": true,
+      "checks": [
+        "button and slider keyboard input",
+        "single active animation button",
+        "text input Select All",
+        "contenteditable editing",
+        "explicitly selectable text"
+      ]
+    },
+    {
+      "entry": "resources.html?scene=garden",
+      "passed": true,
+      "checks": [
+        "Ctrl/Cmd+A",
+        "triple click and camera drag without selection",
+        "stale selection cleanup",
+        "native selection/drag prevention"
+      ]
+    },
+    {
+      "entry": "resources.html?scene=garden",
+      "passed": true,
+      "checks": [
+        "button and slider keyboard input",
+        "single active animation button",
+        "text input Select All",
+        "contenteditable editing",
+        "explicitly selectable text"
+      ]
+    }
+  ],
+  "errors": []
+}

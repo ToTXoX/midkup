@@ -1,0 +1,136 @@
+{
+  "concept": "Cottage garden with a left broadleaf grove, a low right conifer group and one small waterside tree",
+  "material_saturation": 0.82,
+  "material_value": 0.94,
+  "trees": [
+    {
+      "id": "01",
+      "role": "left main tree",
+      "model": "Tree_1_B_Color1",
+      "x": -3.6,
+      "y": 5.48,
+      "height": 1.9500000000000002,
+      "max_width": 1.6875,
+      "rotation": 0.6
+    },
+    {
+      "id": "02",
+      "role": "left companion tree",
+      "model": "Tree_1_A_Color1",
+      "x": -3.98,
+      "y": 4.1,
+      "height": 1.72,
+      "max_width": 1.4,
+      "rotation": 2.1
+    },
+    {
+      "id": "03",
+      "role": "left young tree",
+      "model": "Tree_1_A_Color1",
+      "x": -3.83,
+      "y": 2.7,
+      "height": 1.02,
+      "max_width": 0.85,
+      "rotation": -0.9
+    },
+    {
+      "id": "04",
+      "role": "low waterside tree",
+      "model": "Tree_3_A_Color1",
+      "x": 3.15,
+      "y": 1.85,
+      "height": 1.2,
+      "max_width": 1.15,
+      "rotation": 0.85
+    },
+    {
+      "id": "05",
+      "role": "right main small pine",
+      "model": "Kenney_PineRoundD",
+      "x": 2.65,
+      "y": 5.62,
+      "height": 1.65,
+      "max_width": 0.95,
+      "rotation": 0.35
+    },
+    {
+      "id": "06",
+      "role": "right companion small pine",
+      "model": "Kenney_PineRoundD",
+      "x": 3.3,
+      "y": 5.45,
+      "height": 1.15,
+      "max_width": 0.7,
+      "rotation": 2.0
+    },
+    {
+      "id": "07",
+      "role": "right young small pine",
+      "model": "Kenney_PineRoundD",
+      "x": 3.6,
+      "y": 4.9,
+      "height": 0.78,
+      "max_width": 0.5,
+      "rotation": -0.5
+    }
+  ],
+  "shrubs": [
+    {
+      "model": "Bush_1_C_Color1",
+      "x": -3.35,
+      "y": 5.75,
+      "width": 0.7,
+      "rotation": 0.5
+    },
+    {
+      "model": "Bush_1_C_Color1",
+      "x": -3.65,
+      "y": 3.55,
+      "width": 0.65,
+      "rotation": 2.0
+    },
+    {
+      "model": "Bush_1_A_Color1",
+      "x": -4.0,
+      "y": 2.2,
+      "width": 0.42,
+      "rotation": 0.2
+    },
+    {
+      "model": "Bush_1_C_Color1",
+      "x": 2.55,
+      "y": 5.08,
+      "width": 0.55,
+      "rotation": 0.3
+    },
+    {
+      "model": "Bush_1_C_Color1",
+      "x": 3.45,
+      "y": 4.65,
+      "width": 0.55,
+      "rotation": 1.9
+    },
+    {
+      "model": "Bush_1_A_Color1",
+      "x": 3.5,
+      "y": 1.28,
+      "width": 0.35,
+      "rotation": 0.1
+    },
+    {
+      "model": "Bush_1_C_Color1",
+      "x": -3.88,
+      "y": -2.55,
+      "width": 0.48,
+      "rotation": 2.8
+    },
+    {
+      "model": "Bush_1_A_Color1",
+      "x": 3.87,
+      "y": -2.75,
+      "width": 0.38,
+      "rotation": 0.7
+    }
+  ],
+  "revision_note": "v09: left main tree uniformly reduced to 75 percent of its v08 size; root position preserved"
+}

@@ -1,0 +1,32 @@
+{
+  "fps": 30,
+  "original_bones": 24,
+  "export_bones": 25,
+  "clips": [
+    {
+      "name": "Idle",
+      "duration_s": 3.0,
+      "frames": 91,
+      "loop": true,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "Walk",
+      "duration_s": 0.8,
+      "frames": 25,
+      "loop": true,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "PetReaction",
+      "duration_s": 1.6,
+      "frames": 49,
+      "loop": false,
+      "end_vertex_delta": 0.0
+    }
+  ],
+  "walk_stance_travel_m": 0.13,
+  "walk_stance_fraction": 0.62,
+  "walk_speed_mps": 0.2620967741935484,
+  "maximum_unreachable_foot_error_m": 0
+}

@@ -1,0 +1,90 @@
+import {gardenAction} from './garden-ui-helpers.mjs';
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {createGardenNavigation} from '../src/garden-navigation.js';
+const layout=JSON.parse(await fs.readFile(new URL('../../game-assets/levels/garden.json',import.meta.url)));
+const collision=createGardenNavigation(layout);
+const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});
+const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1,hasTouch:true});
+const errors=[],warnings=[],checks=[];
+page.on('pageerror',e=>errors.push(e.message));
+page.on('console',m=>{if(m.type()==='error')errors.push(m.text());if(m.type()==='warning')warnings.push(m.text());});
+const state=()=>page.evaluate(()=>window.__mudkipTest.snapshot());
+const read=()=>page.evaluate(()=>window.__mudkipTest.navigation());
+const shot=name=>page.screenshot({path:fileURLToPath(new URL(`../../renders/garden-movement-v08-${name}.png`,import.meta.url)),fullPage:true});
+const pass=(name,details)=>{checks.push({name,passed:true,details});console.log('PASS',name,JSON.stringify(details??{}));};
+const simulate=async(seconds)=>{
+  const trace=await page.evaluate(s=>window.__mudkipTest.advanceMovement(s),seconds);
+  for(const p of trace)assert(collision.isWalkable([p[0],p[2]]),'every browser movement step must clear the level obstacles');
+  const snapshot=await state(),nav=await read();
+  assert(Math.abs(snapshot.position[1]-nav.ground-.005)<1e-6,'feet must follow the real terrain height');
+  return {snapshot,nav,samples:trace.length};
+};
+try{
+  await page.goto('http://127.0.0.1:5173/resources.html?scene=garden',{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>window.__mudkipTest?.diagnostics.ready);
+  assert.equal(await page.locator('#error').isVisible(),false);
+  assert(await page.locator('#garden-controls').isVisible());assert(!(await page.locator('.controls').isVisible()));
+  await shot('ready');
+  const initial=await state(),groundPoint=await page.evaluate(()=>window.__mudkipTest.project(1,0,1.8));
+  await page.mouse.click(groundPoint.x,groundPoint.y);
+  await page.waitForFunction(()=>window.__mudkipTest.snapshot().target!==null);
+  assert.equal((await state()).clip,'Run');
+  await shot('walking');
+  await page.waitForFunction(()=>window.__mudkipTest.snapshot().target===null,null,{timeout:9000});
+  const arrived=await state();assert.equal(arrived.clip,'Idle');assert(Math.hypot(arrived.position[0]-initial.position[0],arrived.position[2]-initial.position[2])>.8);
+  pass('Actual canvas click turns and moves the character, then returns to Idle',arrived.position);
+
+  await gardenAction(page,'回到起点');
+  const plan=await page.evaluate(()=>window.__mudkipTest.moveTo(2,-4));
+  assert(plan.ok&&plan.waypoints.length>1&&!plan.adjusted);
+  await page.waitForTimeout(220);
+  const marker=await page.evaluate(()=>window.__mudkipTest.destination());
+  assert(marker.visible&&marker.nominalDiameterPixels>=36&&marker.routeLines===0);
+  await shot('destination');
+  pass('White and mint destination ring has a constant visible size; no route lines',marker);
+  const detour=await simulate(35);assert.equal(detour.snapshot.target,null);assert.equal(detour.snapshot.clip,'Idle');
+  assert(Math.hypot(detour.snapshot.position[0]-2,detour.snapshot.position[2]+4)<.001);
+  pass('A* route walks around targets without tunneling and stays on uneven terrain',{waypoints:plan.waypoints,length:plan.length,samples:detour.samples});
+
+  // Pond clicks now deliberately enter water; that route has its own swimming suite.
+  for(const [name,x,z] of [['house',-1.3,-4.8],['tree',-3.79,-5.77],['edge',15,15]]){
+    await gardenAction(page,'回到起点');
+    const route=await page.evaluate(({x,z})=>window.__mudkipTest.moveTo(x,z),{x,z});
+    assert(route.ok&&route.adjusted);
+    const result=await simulate(45);assert.equal(result.snapshot.target,null);
+    assert(Math.hypot(result.snapshot.position[0]-route.goal.x,result.snapshot.position[2]-route.goal.z)<.001);
+    pass(`Clicking ${name} resolves to reachable ground`,{goal:route.goal,samples:result.samples});
+  }
+  await gardenAction(page,'回到起点');
+  await page.evaluate(()=>window.__mudkipTest.moveTo(2,-4));
+  await gardenAction(page,'暂停');
+  const paused=(await state()).position;await simulate(4);assert.deepEqual((await state()).position,paused);
+  await gardenAction(page,'继续');
+  await page.getByRole('switch',{name:'小跑模式',exact:true}).click();assert.equal((await state()).clip,'Walk');
+  await page.evaluate(()=>window.__mudkipTest.moveTo(-1,2));
+  const retarget=await simulate(25);assert.equal(retarget.snapshot.clip,'Idle');
+  await page.evaluate(()=>window.__mudkipTest.moveTo(0,1));assert.equal((await state()).clip,'Walk');
+  pass('Pause, gait changes and new destinations preserve a valid movement state');
+  await gardenAction(page,'回到起点');
+  await page.mouse.move(900,500);await page.mouse.down();await page.mouse.move(970,530,{steps:6});await page.mouse.up();assert.equal((await state()).target,null);
+  pass('Dragging the camera does not issue a walk command');
+  await gardenAction(page,'重置视角');
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(100);
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth===innerWidth));
+  const mobilePoint=await page.evaluate(()=>window.__mudkipTest.project(-1,0,1.8)),panel=await page.locator('#garden-controls').boundingBox();
+  assert(mobilePoint.x>16&&mobilePoint.x<374&&mobilePoint.y>96&&mobilePoint.y<panel.y-10,'mobile destination must be clear of controls');
+  await page.touchscreen.tap(mobilePoint.x,mobilePoint.y);
+  assert((await state()).target!==null);await shot('mobile');await simulate(20);
+  pass('Touch movement and mobile framing work without horizontal overflow',mobilePoint);
+  await gardenAction(page,'返回动作台');
+  assert(await page.locator('.controls').isVisible());assert.equal((await page.evaluate(()=>window.__mudkipTest.resources())).view,'stage');
+  assert.equal((await state()).target,null);
+  await page.getByRole('button',{name:'去庭院散步 →',exact:true}).click();
+  assert(await page.locator('#garden-controls').isVisible());
+  pass('Switching between the animation stage and garden resets travel safely');
+  assert.deepEqual(errors,[]);assert.deepEqual(warnings,[]);
+  await fs.writeFile(new URL('../../docs/garden-movement-v08-browser-tests.json',import.meta.url),JSON.stringify({timestamp:new Date().toISOString(),browser:await browser.version(),checks,errors,warnings},null,2));
+}finally{await browser.close();}

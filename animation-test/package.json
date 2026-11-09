@@ -1,0 +1,41 @@
+{
+  "name": "mudkip-animation-test",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "vite build",
+    "test:asset": "node scripts/verify-glb.mjs",
+    "assets:prepare": "node scripts/prepare-game-assets.mjs",
+    "test:resources": "node scripts/resources-browser-test.mjs",
+    "test:toon": "node scripts/toon-visual-test.mjs v08",
+    "test:movement": "node scripts/garden-navigation-test.mjs && node scripts/garden-movement-browser-test.mjs",
+    "test:movement-feel": "node scripts/movement-feel-browser-test.mjs",
+    "test:footprints": "node scripts/garden-footprints-browser-test.mjs",
+    "test:selection": "node scripts/selection-browser-test.mjs",
+    "test:camera": "node scripts/camera-browser-test.mjs",
+    "test:dance-b": "node scripts/tail-dance-browser-test.mjs",
+    "test:dance-c": "node scripts/celebration-browser-test.mjs",
+    "test:garden-dance": "node scripts/garden-dance-browser-test.mjs",
+    "test:combat": "node scripts/garden-combat-browser-test.mjs",
+    "test:skill": "node scripts/water-skill-browser-test.mjs",
+    "test:head-recovery": "node scripts/head-recovery-browser-test.mjs",
+    "test:food-contact": "node scripts/food-contact-browser-test.mjs",
+    "test:eating": "node scripts/eating-phases-browser-test.mjs",
+    "test:basket": "node scripts/garden-basket-browser-test.mjs",
+    "test:fruit": "node scripts/garden-fruit-browser-test.mjs",
+    "test:swimming": "node scripts/pond-swimming-browser-test.mjs",
+    "test:water": "node scripts/water-effect-geometry-test.mjs && node scripts/water-effect-browser-test.mjs",
+    "test:browser": "node scripts/browser-test.mjs",
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "gltf-validator": "^2.0.0-dev.3.10",
+    "playwright-core": "^1.64.1",
+    "vite": "8.3.5"
+  }
+}

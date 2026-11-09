@@ -1,0 +1,206 @@
+{
+  "url": "http://127.0.0.1:5173/",
+  "timestamp": "2026-11-03T09:29:17.394Z",
+  "browser": "156.0.4314.58",
+  "diagnostics": {
+    "ready": true,
+    "version": "187",
+    "errors": [],
+    "clips": [
+      {
+        "name": "Idle",
+        "duration": 3,
+        "tracks": 75
+      },
+      {
+        "name": "PetReaction",
+        "duration": 1.600000023841858,
+        "tracks": 75
+      },
+      {
+        "name": "Walk",
+        "duration": 0.800000011920929,
+        "tracks": 75
+      }
+    ],
+    "meshes": 2,
+    "bones": [
+      25
+    ],
+    "textures": [
+      {
+        "name": "pm0258_00_Body1",
+        "width": 256,
+        "height": 256,
+        "colorSpace": "srgb"
+      },
+      {
+        "name": "pm0258_00_Eye1",
+        "width": 256,
+        "height": 256,
+        "colorSpace": "srgb"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "GLB clips, skeleton and embedded textures load in Three.js",
+      "passed": true,
+      "details": {
+        "ready": true,
+        "version": "187",
+        "errors": [],
+        "clips": [
+          {
+            "name": "Idle",
+            "duration": 3,
+            "tracks": 75
+          },
+          {
+            "name": "PetReaction",
+            "duration": 1.600000023841858,
+            "tracks": 75
+          },
+          {
+            "name": "Walk",
+            "duration": 0.800000011920929,
+            "tracks": 75
+          }
+        ],
+        "meshes": 2,
+        "bones": [
+          25
+        ],
+        "textures": [
+          {
+            "name": "pm0258_00_Body1",
+            "width": 256,
+            "height": 256,
+            "colorSpace": "srgb"
+          },
+          {
+            "name": "pm0258_00_Eye1",
+            "width": 256,
+            "height": 256,
+            "colorSpace": "srgb"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Exported skin deformation, loop seams, root motion and foot contact",
+      "passed": true,
+      "details": {
+        "Idle": {
+          "deform": 0.013832597409654257,
+          "seam": 5.3501683414287904e-8,
+          "horizontalRoot": 0,
+          "maxCoordinate": 1.0178396833071381
+        },
+        "PetReaction": {
+          "deform": 0.089341315968157,
+          "seam": 1.1901076124587462e-8,
+          "horizontalRoot": 0,
+          "maxCoordinate": 1.005686743911235
+        },
+        "Walk": {
+          "deform": 0.10663375869578726,
+          "seam": 9.718628713462074e-7,
+          "horizontalRoot": 0,
+          "maxCoordinate": 0.997817440510269
+        },
+        "walkContact": {
+          "delta": [
+            -1.891320949715114e-7,
+            0.00002264982577009772,
+            -0.026214282913414683
+          ],
+          "expectedTravel": 0.02620967741935484
+        }
+      }
+    },
+    {
+      "name": "Action buttons, 220 ms crossfade, pause, scrub and resume",
+      "passed": true
+    },
+    {
+      "name": "Rapid action switching settles to one active clip",
+      "passed": true,
+      "details": [
+        {
+          "name": "Idle",
+          "weight": 0,
+          "scheduled": false,
+          "running": false
+        },
+        {
+          "name": "PetReaction",
+          "weight": 0,
+          "scheduled": true,
+          "running": false
+        },
+        {
+          "name": "Walk",
+          "weight": 1,
+          "scheduled": true,
+          "running": true
+        }
+      ]
+    },
+    {
+      "name": "Clicking the rendered character plays one reaction, emits hearts and returns to Idle",
+      "passed": true
+    },
+    {
+      "name": "Runtime movement reaches its destination and returns to Idle",
+      "passed": true,
+      "details": [
+        0.6,
+        0.005,
+        -0.3
+      ]
+    },
+    {
+      "name": "Walk cadence control also changes runtime travel speed",
+      "passed": true,
+      "details": [
+        0.32327994768972507,
+        0.005,
+        -0.3
+      ]
+    },
+    {
+      "name": "Clicking the rendered ground selects a world-space movement destination",
+      "passed": true,
+      "details": [
+        0.7999999270672592,
+        0,
+        0.5000000791113184
+      ]
+    },
+    {
+      "name": "Desktop and 390 px mobile viewport render without overflow",
+      "passed": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "controlBounds": {
+          "x": 16,
+          "y": 476.609375,
+          "width": 358,
+          "height": 350.390625,
+          "top": 476.609375,
+          "right": 374,
+          "bottom": 827,
+          "left": 16
+        }
+      }
+    },
+    {
+      "name": "No browser script, WebGL or network errors",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

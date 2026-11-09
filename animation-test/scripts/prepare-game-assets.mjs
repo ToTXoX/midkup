@@ -1,0 +1,75 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { validateBytes } from 'gltf-validator';
+const project = fileURLToPath(new URL('../..', import.meta.url));
+const source = path.join(project,'game-assets');
+const destination = path.join(project,'animation-test/public/assets/game');
+const paths=['characters/mudkip/mudkip.glb','characters/mudkip/animations.json','environments/garden.glb','props/berry.glb','props/target-normal.glb','props/target-moving.glb','props/target-heavy.glb','levels/garden.json','fx/water-gun.js','fx/pond-water.js','fx/README.md','rendering/toon-style.js','rendering/README.md','gameplay/garden-swimming.js','gameplay/garden-navigation.js','gameplay/destination-marker.js','gameplay/water-aim.js','gameplay/garden-combat.js','gameplay/target-feedback.js','gameplay/water-skill-input.js','gameplay/README.md'];
+await fs.mkdir(path.join(source,'fx'),{recursive:true});
+await fs.copyFile(path.join(project,'animation-test/src/water-gun-effect.js'),path.join(source,'fx/water-gun.js'));
+await fs.copyFile(path.join(project,'animation-test/src/pond-water.js'),path.join(source,'fx/pond-water.js'));
+await fs.copyFile(path.join(project,'animation-test/src/pond-lily.js'),path.join(source,'fx/pond-lily.js'));
+await fs.copyFile(path.join(project,'animation-test/src/tackle-effects.js'),path.join(source,'fx/tackle-effects.js'));
+await fs.copyFile(path.join(project,'animation-test/src/mud-effects.js'),path.join(source,'fx/mud-effects.js'));
+await fs.copyFile(path.join(project,'animation-test/src/comic-texture.js'),path.join(source,'fx/comic-texture.js'));
+await fs.copyFile(path.join(project,'animation-test/src/pond-simulation.js'),path.join(source,'fx/pond-simulation.js'));
+await fs.mkdir(path.join(source,'fx/vendor'),{recursive:true});
+for(const name of ['water-reference.js','water-LICENSE.txt'])await fs.copyFile(path.join(project,'animation-test/src/vendor',name),path.join(source,'fx/vendor',name));
+paths.push('fx/pond-lily.js','fx/tackle-effects.js','fx/mud-effects.js','fx/comic-texture.js','fx/pond-simulation.js','fx/vendor/water-reference.js','fx/vendor/water-LICENSE.txt');
+await fs.copyFile(path.join(project,'animation-test/src/cartoon-splash.js'),path.join(source,'fx/cartoon-splash.js'));
+paths.push('fx/cartoon-splash.js','fx/textures/cartoon-splash-v14.png','fx/textures/cartoon-splash-v14.json');
+await fs.mkdir(path.join(source,'rendering'),{recursive:true});
+await fs.copyFile(path.join(project,'animation-test/src/toon-style.js'),path.join(source,'rendering/toon-style.js'));
+await fs.copyFile(path.join(project,'animation-test/src/eye-expressions.js'),path.join(source,'rendering/eye-expressions.js'));
+await fs.copyFile(path.join(project,'animation-test/src/garden-meadow.js'),path.join(source,'rendering/garden-meadow.js'));
+await fs.copyFile(path.join(project,'animation-test/src/garden-butterfly.js'),path.join(source,'rendering/garden-butterfly.js'));
+await fs.copyFile(path.join(project,'animation-test/src/garden-wind-chime.js'),path.join(source,'rendering/garden-wind-chime.js'));
+paths.push('rendering/eye-expressions.js','rendering/garden-meadow.js','rendering/garden-butterfly.js','rendering/garden-wind-chime.js');
+await fs.mkdir(path.join(source,'gameplay'),{recursive:true});
+await fs.copyFile(path.join(project,'animation-test/src/garden-navigation.js'),path.join(source,'gameplay/garden-navigation.js'));
+await fs.copyFile(path.join(project,'animation-test/src/destination-marker.js'),path.join(source,'gameplay/destination-marker.js'));
+for(const name of ['water-aim.js','garden-combat.js','garden-tackle.js','garden-mud.js','garden-action-pose.js','target-feedback.js','water-skill-input.js','garden-swimming.js','garden-fruit.js','garden-footprints.js'])await fs.copyFile(path.join(project,'animation-test/src',name),path.join(source,'gameplay',name));
+paths.push('gameplay/garden-fruit.js','levels/garden-fruit.json','gameplay/garden-footprints.js','gameplay/garden-tackle.js','gameplay/garden-mud.js','gameplay/garden-action-pose.js');
+await fs.mkdir(path.join(source,'licenses'),{recursive:true});
+await fs.copyFile(path.join(project,'models/kenney-nature-kit/extracted/License.txt'),path.join(source,'licenses/kenney-CC0.txt'));
+await fs.copyFile(path.join(project,'models/kaykit-forest/extracted/KayKit_Forest_Nature_Pack_1.0_FREE/License.txt'),path.join(source,'licenses/kaykit-CC0.txt'));
+await fs.copyFile(path.join(project,'docs/asset-credits.md'),path.join(source,'CREDITS.md'));
+const files=[], validation=[];
+for (const relative of paths) {
+  const bytes = await fs.readFile(path.join(source,relative));
+  const item={path:relative,bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex')};
+  if (relative.endsWith('.glb')) {
+    const report = await validateBytes(new Uint8Array(bytes),{ uri:relative,maxIssues:100 });
+    validation.push({path:relative,issues:report.issues,info:report.info});
+    if (report.issues.numErrors) throw new Error(`${relative}: ${report.issues.numErrors} glTF errors`);
+    const json=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString());
+    item.meshes=json.meshes?.length??0;
+    item.primitives=json.meshes?.reduce((n,m)=>n+m.primitives.length,0)??0;
+    item.triangles=json.meshes?.reduce((n,m)=>n+m.primitives.reduce((s,p)=>s+(p.indices===undefined?json.accessors[p.attributes.POSITION].count:json.accessors[p.indices].count)/3,0),0)??0;
+    item.animations=json.animations?.map((a)=>a.name)??[];
+    item.colorPrimitives=json.meshes?.reduce((n,m)=>n+m.primitives.filter((p)=>p.attributes.COLOR_0!==undefined).length,0)??0;
+    console.log(relative,bytes.length,'bytes,',item.triangles,'triangles,',report.issues.numErrors,'errors,',report.issues.numWarnings,'warnings');
+  }
+  files.push(item);
+}
+const manifest={schemaVersion:1,version:'0.21.11',units:'meters',up:'+Y',characterForward:'+Z',character:'characters/mudkip/mudkip.glb',animations:'characters/mudkip/animations.json',environment:'environments/garden.glb',level:'levels/garden.json',effects:{waterGun:'fx/water-gun.js',pond:'fx/pond-water.js'},rendering:{style:'rendering/toon-style.js',readme:'rendering/README.md'},gameplay:{swimming:'gameplay/garden-swimming.js',navigation:'gameplay/garden-navigation.js',destination:'gameplay/destination-marker.js',aim:'gameplay/water-aim.js',combat:'gameplay/garden-combat.js',hitFeedback:'gameplay/target-feedback.js',skillInput:'gameplay/water-skill-input.js'},props:{berry:'props/berry.glb',targets:{normal:'props/target-normal.glb',moving:'props/target-moving.glb',heavy:'props/target-heavy.glb'}},credits:'CREDITS.md',files};
+manifest.rendering.expressions='rendering/eye-expressions.js';
+manifest.rendering.cottageMeadow='rendering/garden-meadow.js';
+manifest.rendering.windChime='rendering/garden-wind-chime.js';
+manifest.fruitLevel='levels/garden-fruit.json';
+manifest.gameplay.fruit='gameplay/garden-fruit.js';
+manifest.gameplay.footprints='gameplay/garden-footprints.js';
+manifest.gameplay.tackle='gameplay/garden-tackle.js';
+manifest.effects.tackle='fx/tackle-effects.js';
+manifest.gameplay.mud='gameplay/garden-mud.js';
+manifest.effects.mud='fx/mud-effects.js';
+await fs.writeFile(path.join(source,'manifest.json'),JSON.stringify(manifest,null,2));
+await fs.writeFile(path.join(project,'docs/game-assets-validation.json'),JSON.stringify({files:validation},null,2));
+for(const relative of [...paths,'manifest.json','CREDITS.md','licenses/kenney-CC0.txt','licenses/kaykit-CC0.txt']) {
+  const target=path.join(destination,relative);
+  await fs.mkdir(path.dirname(target),{recursive:true});
+  await fs.copyFile(path.join(source,relative),target);
+}
+console.log('Runtime pack ready:',files.reduce((n,f)=>n+f.bytes,0),'bytes');

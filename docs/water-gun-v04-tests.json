@@ -1,0 +1,211 @@
+{
+  "browser": "156.0.4314.58",
+  "timestamp": "2026-11-03T07:57:06.887Z",
+  "checks": [
+    {
+      "name": "Mouth anticipation, coherent jet, seven pooled flight droplets, breakup and a surface-aligned splash",
+      "passed": true,
+      "details": {
+        "jet": {
+          "phase": "jet",
+          "emitting": true,
+          "stream": true,
+          "fragments": 1,
+          "crown": false,
+          "ripples": 0,
+          "flightDrops": 5,
+          "splashDrops": 0,
+          "impactPoint": [
+            0.0007531713166900747,
+            -0.0349999999999973,
+            2.1583435050312607
+          ],
+          "impactNormal": [
+            0,
+            1,
+            2.220446049250313e-16
+          ],
+          "firstImpact": 0.36465760313897955,
+          "lastImpact": 0.6546576031389795,
+          "time": 0.34,
+          "youngestAge": 0,
+          "oldestAge": 0.17,
+          "splashStyle": "simple-cartoon",
+          "splashLobes": 0,
+          "contactPatch": false,
+          "maximumDiameter": 0.1512378127454335,
+          "jetSpeed": 9,
+          "splashScale": 1.55,
+          "nearMouthDiameter": 0.021279888126370695,
+          "active": true,
+          "tail": false,
+          "pooledMeshes": 32,
+          "streamVertices": 645
+        },
+        "collision": {
+          "phase": "cutoff",
+          "emitting": false,
+          "stream": true,
+          "fragments": 3,
+          "crown": true,
+          "ripples": 2,
+          "flightDrops": 0,
+          "splashDrops": 0,
+          "impactPoint": [
+            0.0007531713166900747,
+            -0.0349999999999973,
+            2.1583435050312607
+          ],
+          "impactNormal": [
+            0,
+            1,
+            2.220446049250313e-16
+          ],
+          "firstImpact": 0.36465760313897955,
+          "lastImpact": 0.6546576031389795,
+          "time": 0.57,
+          "youngestAge": 0.10999999999999993,
+          "oldestAge": 0.1946576031389795,
+          "splashStyle": "simple-cartoon",
+          "splashLobes": 4,
+          "contactPatch": true,
+          "maximumDiameter": 0.19015965808034607,
+          "jetSpeed": 9,
+          "splashScale": 1.55,
+          "nearMouthDiameter": 0,
+          "active": true,
+          "tail": false,
+          "pooledMeshes": 32,
+          "streamVertices": 645
+        }
+      }
+    },
+    {
+      "name": "Backward scrubbing reconstructs the effect without stale water or collision timing drift",
+      "passed": true
+    },
+    {
+      "name": "Four simple cartoon lobes disperse quickly; no persistent raised water mass",
+      "passed": true,
+      "details": {
+        "phase": "residual",
+        "emitting": false,
+        "stream": false,
+        "fragments": 0,
+        "crown": false,
+        "ripples": 1,
+        "flightDrops": 0,
+        "splashDrops": 0,
+        "impactPoint": [
+          0.0007531713166900747,
+          -0.0349999999999973,
+          2.1583435050312607
+        ],
+        "impactNormal": [
+          0,
+          1,
+          2.220446049250313e-16
+        ],
+        "firstImpact": 0.36465760313897955,
+        "lastImpact": 0.6546576031389795,
+        "time": 0.8832999999999998,
+        "youngestAge": 0.42329999999999973,
+        "oldestAge": 0.1946576031389795,
+        "splashStyle": "simple-cartoon",
+        "splashLobes": 0,
+        "contactPatch": false,
+        "maximumDiameter": 0,
+        "jetSpeed": 9,
+        "splashScale": 1.55,
+        "nearMouthDiameter": 0,
+        "active": true,
+        "tail": true,
+        "pooledMeshes": 32,
+        "streamVertices": 645
+      }
+    },
+    {
+      "name": "Repeated shots reuse GPU geometry, textures and shader programs",
+      "passed": true,
+      "details": {
+        "before": {
+          "geometries": 49,
+          "textures": 6,
+          "programs": 10
+        },
+        "after": {
+          "geometries": 49,
+          "textures": 6,
+          "programs": 10
+        }
+      }
+    },
+    {
+      "name": "Half-speed playback, post-animation water ripples, pause/resume and complete fade-out",
+      "passed": true,
+      "details": {
+        "phase": "residual",
+        "emitting": false,
+        "stream": false,
+        "fragments": 0,
+        "crown": false,
+        "ripples": 2,
+        "flightDrops": 0,
+        "splashDrops": 0,
+        "impactPoint": [
+          3.282984379947666e-14,
+          -0.03499999999999857,
+          2.130802428973943
+        ],
+        "impactNormal": [
+          0,
+          1,
+          2.220446049250313e-16
+        ],
+        "firstImpact": 0.36159543267674477,
+        "lastImpact": 0.6515954326767448,
+        "time": 0.8277999999999995,
+        "youngestAge": 0.3677999999999995,
+        "oldestAge": 0.19159543267674475,
+        "splashStyle": "simple-cartoon",
+        "splashLobes": 0,
+        "contactPatch": false,
+        "maximumDiameter": 0,
+        "jetSpeed": 9,
+        "splashScale": 1.55,
+        "nearMouthDiameter": 0,
+        "active": true,
+        "tail": true,
+        "pooledMeshes": 32,
+        "streamVertices": 645
+      }
+    },
+    {
+      "name": "Interrupting a shot cancels its detached water and residual effects",
+      "passed": true
+    },
+    {
+      "name": "Mobile framing keeps the complete stream and impact above the controls",
+      "passed": true,
+      "details": {
+        "x": 155.74331186950687,
+        "y": 290.90538356608585
+      }
+    },
+    {
+      "name": "The same effect hits the actual exported garden terrain",
+      "passed": true,
+      "details": [
+        0.7119772580088309,
+        0.021484375,
+        3.2193144283409354
+      ]
+    },
+    {
+      "name": "No browser errors, warnings or failed requests",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

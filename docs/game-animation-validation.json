@@ -1,0 +1,110 @@
+{
+  "fps": 120,
+  "original_bones": 24,
+  "export_bones": 25,
+  "clips": [
+    {
+      "name": "Idle",
+      "duration_s": 3.0,
+      "frames": 361,
+      "loop": true,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "Walk",
+      "duration_s": 0.4,
+      "frames": 49,
+      "loop": true,
+      "end_vertex_delta": 0.0,
+      "minimum_vertex_z": -0.003986814990639687,
+      "maximum_lowest_vertex_z": -0.003986668307334185,
+      "airborne_frames": 0
+    },
+    {
+      "name": "Run",
+      "duration_s": 0.35,
+      "frames": 43,
+      "loop": true,
+      "end_vertex_delta": 0.0,
+      "minimum_vertex_z": -0.004581179469823837,
+      "maximum_lowest_vertex_z": 0.029656443744897842,
+      "airborne_frames": 12
+    },
+    {
+      "name": "PetReaction",
+      "duration_s": 1.6,
+      "frames": 193,
+      "loop": false,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "Eat",
+      "duration_s": 2.6,
+      "frames": 313,
+      "loop": false,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "WaterCharge",
+      "duration_s": 1.0,
+      "frames": 121,
+      "loop": true,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "WaterShoot",
+      "duration_s": 1.0,
+      "frames": 121,
+      "loop": false,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "Swim",
+      "duration_s": 0.7166666666666667,
+      "frames": 87,
+      "loop": true,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "SwimIdle",
+      "duration_s": 2.4,
+      "frames": 289,
+      "loop": true,
+      "end_vertex_delta": 0.0
+    },
+    {
+      "name": "DanceA",
+      "duration_s": 4.0,
+      "frames": 481,
+      "loop": true,
+      "end_vertex_delta": 0.0,
+      "minimum_vertex_z": -0.003986800089478493,
+      "maximum_lowest_vertex_z": 0.07643264532089233,
+      "airborne_frames": 47
+    },
+    {
+      "name": "DanceB",
+      "duration_s": 3.0,
+      "frames": 361,
+      "loop": true,
+      "end_vertex_delta": 0.0,
+      "minimum_vertex_z": -0.003986820112913847,
+      "maximum_lowest_vertex_z": -0.003986675757914782,
+      "airborne_frames": 0
+    },
+    {
+      "name": "DanceC",
+      "duration_s": 5.0,
+      "frames": 601,
+      "loop": false,
+      "end_vertex_delta": 1.5159420654534057e-07,
+      "minimum_vertex_z": -0.005438977852463722,
+      "maximum_lowest_vertex_z": 0.0680077001452446,
+      "airborne_frames": 42
+    }
+  ],
+  "walk_stance_travel_m": 0.148,
+  "walk_stance_fraction": 0.56,
+  "walk_speed_mps": 0.6607142857142856,
+  "maximum_unreachable_foot_error_m": 0
+}

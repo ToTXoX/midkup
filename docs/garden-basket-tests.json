@@ -1,0 +1,33 @@
+{
+  "checks": [
+    {
+      "name": "Clicking the basket walks safely and keeps the face visible without moving the camera",
+      "passed": true
+    },
+    {
+      "name": "Pause freezes the meal; repeated clicks do not stack meals; the complete animation returns to Idle",
+      "passed": true
+    },
+    {
+      "name": "Two meals keep the original view, then free movement resumes immediately",
+      "passed": true
+    },
+    {
+      "name": "A new ground destination cancels the pending meal during approach",
+      "passed": true
+    },
+    {
+      "name": "Zoom and drag remain available, Mudkip follows the new angle, and the water gun can interrupt",
+      "passed": true
+    },
+    {
+      "name": "Phone users can tap the basket and watch the same bite, chewing, swallow and happy ending",
+      "passed": true
+    },
+    {
+      "name": "Changing scenes cancels the interaction, hides the hotspot and produces no browser errors",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

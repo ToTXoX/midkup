@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "checks": [
+    "Dragging from the character and back rotates the camera without starting a dance",
+    {
+      "name": "Real model clicks choose all dances without repeats; each plays once and resets its expression",
+      "sequence": [
+        "DanceB",
+        "DanceA",
+        "DanceC",
+        "DanceA",
+        "DanceB",
+        "DanceC"
+      ]
+    },
+    "A character tap stops walking; a new destination interrupts the dance",
+    "Tapping during a meal finishes the fruit exactly once, then dances",
+    "Tapping the swimmer exits at the shore before dancing on land",
+    "A new grass command cancels a queued shore dance without a phantom restart",
+    "The water skill interrupts dancing and clears pending dance requests",
+    "A and B regain looping playback in the animation stage",
+    "A native phone tap starts one dance; scene changes cancel the interaction"
+  ],
+  "errors": []
+}

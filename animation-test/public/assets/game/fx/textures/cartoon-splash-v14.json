@@ -1,0 +1,48 @@
+{
+  "columns": 4,
+  "rows": 4,
+  "frames": 16,
+  "size": [
+    1254,
+    1254
+  ],
+  "anchors": [
+    0.13376,
+    0.13057,
+    0.13376,
+    0.14013,
+    0.22364,
+    0.22364,
+    0.22364,
+    0.22684,
+    0.23642,
+    0.23962,
+    0.24601,
+    0.2524,
+    0.25159,
+    0.25159,
+    0.14,
+    0.14
+  ],
+  "opaquePixels": [
+    5626,
+    9475,
+    11298,
+    12237,
+    13319,
+    11786,
+    10927,
+    8905,
+    6640,
+    5213,
+    2910,
+    1306,
+    470,
+    231,
+    0,
+    0
+  ],
+  "duration": 0.64,
+  "asset": "cartoon-splash-v14.png",
+  "source": "Independent imagegen animation; style/motion reference: Dmitry Sarkisov, Water Splash 2D VFX Animation. Reference GIF not used at runtime."
+}

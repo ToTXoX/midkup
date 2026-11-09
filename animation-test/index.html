@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#e6eee6" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <title>水跃鱼 · 动画试验庭</title>
+    <meta name="description" content="水跃鱼 Blender 骨骼动画在 Three.js 中的交互预览。" />
+  </head>
+  <body>
+    <main id="app">
+      <div id="scene" aria-label="可拖动视角的水跃鱼三维预览"></div>
+      <header>
+        <span class="brand-mark" aria-hidden="true">m.</span>
+        <div><span class="eyebrow">MUDKIP / PLAYGROUND</span><h1>水跃鱼的动画试验庭</h1></div>
+      </header>
+      <div class="view-hint"><a href="/resources.html">游戏资源库 →</a>　拖动旋转 · 滚轮缩放</div>
+      <section class="controls" aria-label="动画控制">
+        <div class="panel-heading"><span class="dot"></span><span id="clip-label" aria-live="polite">正在准备小伙伴…</span><span id="duration">—</span></div>
+        <h2>和水跃鱼打个招呼</h2>
+        <p class="intro">点击它，看看摸头时的小反应。</p>
+        <div class="actions" role="group" aria-label="选择动作">
+          <button data-clip="Idle" aria-pressed="true" disabled><span>待机</span><small>轻轻呼吸</small></button>
+          <button data-clip="Walk" aria-pressed="false" disabled><span>走路</span><small>小步慢走</small></button>
+          <button data-clip="PetReaction" aria-pressed="false" disabled><span>摸头</span><small>开心摇尾</small></button>
+        </div>
+        <div class="setting"><label for="rate">走路步频</label><output id="rate-value" for="rate">1.0×</output></div>
+        <input id="rate" type="range" min="0.5" max="1.8" step="0.1" value="1" aria-label="走路步频" disabled />
+        <label class="movement"><span><strong>点击地面移动</strong><small>位移与步频同步</small></span><input id="movement" type="checkbox" role="switch" disabled /><span class="switch" aria-hidden="true"></span></label>
+        <div class="timeline"><input id="timeline" type="range" min="0" max="1000" step="1" value="0" aria-label="动画进度，拖动后暂停" disabled /><output id="time">0.00 / 3.00 s</output></div>
+        <div class="secondary"><button id="pause" disabled>暂停</button><span class="divider"></span><button id="reset-view">重置视角</button><span id="playback-note">循环播放</span></div>
+      </section>
+      <div class="status" role="status"><span class="dot"></span><span id="status">正在加载 GLB…</span></div>
+      <div id="error" role="alert" hidden></div>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

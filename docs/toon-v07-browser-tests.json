@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-11-03T09:01:32.658Z",
+  "errors": [],
+  "warnings": [],
+  "diagnostics": {
+    "ready": true,
+    "version": "187",
+    "errors": [],
+    "clips": [
+      {
+        "name": "Eat",
+        "duration": 1.7999999523162842,
+        "tracks": 75
+      },
+      {
+        "name": "Idle",
+        "duration": 3,
+        "tracks": 75
+      },
+      {
+        "name": "PetReaction",
+        "duration": 1.600000023841858,
+        "tracks": 75
+      },
+      {
+        "name": "Run",
+        "duration": 0.5,
+        "tracks": 75
+      },
+      {
+        "name": "Walk",
+        "duration": 0.800000011920929,
+        "tracks": 75
+      },
+      {
+        "name": "WaterCharge",
+        "duration": 1,
+        "tracks": 75
+      },
+      {
+        "name": "WaterShoot",
+        "duration": 1,
+        "tracks": 75
+      }
+    ],
+    "meshes": 2,
+    "bones": [
+      25
+    ],
+    "textures": [
+      {
+        "name": "pm0258_00_Body1",
+        "width": 256,
+        "height": 256,
+        "colorSpace": "srgb"
+      },
+      {
+        "name": "pm0258_00_Eye1",
+        "width": 256,
+        "height": 256,
+        "colorSpace": "srgb"
+      }
+    ]
+  },
+  "stats": {
+    "geometries": 126,
+    "textures": 5,
+    "programs": 17
+  },
+  "style": {
+    "name": "anime-cel-v06",
+    "bands": 3,
+    "materials": 60,
+    "outlinedMaterials": 46,
+    "characterOutline": 0.0018,
+    "physicalSpecular": false
+  }
+}

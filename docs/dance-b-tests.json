@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    "3-second seamless loop; fixed front paws; flat feet and alternating 10 mm rear steps",
+    "Visible tail follow-through and a held head tilt without ground penetration",
+    "A/B switches keep one selected action; mouse orbit and selection protection both work",
+    "Playback continues into another B loop",
+    "Phone preview and B button remain visible"
+  ],
+  "data": {
+    "duration": 3,
+    "seam": 8.048491831336158e-9,
+    "minimumY": 0.0010131377207928394,
+    "frontDrift": 8.414886003404054e-8,
+    "footRotation": 0.000037065607355434336,
+    "rearLift": 0.010000004314131276,
+    "tailAngle": 0.5204672318775646,
+    "rootSideways": 0.007227784932176519,
+    "bothRearLifted": 0,
+    "peekAngle": 0.1580387254302593,
+    "holdDelta": 0
+  },
+  "errors": []
+}

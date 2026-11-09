@@ -1,0 +1,264 @@
+{
+  "timestamp": "2026-11-04T09:46:36.116Z",
+  "checks": [
+    {
+      "name": "Brisk walk and springy run have distinct speeds, acceleration and soft stops",
+      "passed": true,
+      "details": {
+        "Walk": {
+          "time": 2.7249999999999943,
+          "peak": 0.6607142857142856,
+          "earlySpeed": 0.25,
+          "final": {
+            "loaded": true,
+            "paused": false,
+            "rate": 1,
+            "waterRate": 1,
+            "movement": true,
+            "travelGait": "Walk",
+            "transitions": 3,
+            "speed": 0,
+            "visualLean": [
+              -0.0007082847007263088,
+              6.761767958143573e-20
+            ],
+            "clip": "Idle",
+            "time": 0,
+            "position": [
+              0,
+              0.026484375,
+              3
+            ],
+            "target": null,
+            "actions": [
+              {
+                "name": "DanceA",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Eat",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Idle",
+                "weight": 1,
+                "scheduled": true,
+                "running": true
+              },
+              {
+                "name": "PetReaction",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Run",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Swim",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "SwimIdle",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Walk",
+                "weight": 1,
+                "scheduled": true,
+                "running": true
+              },
+              {
+                "name": "WaterCharge",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "WaterShoot",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              }
+            ],
+            "hearts": 0
+          },
+          "settledLean": [
+            -0.0000013006265794402103,
+            5.035206680663051e-22
+          ]
+        },
+        "Run": {
+          "time": 1.2499999999999996,
+          "peak": 1.5446428571428572,
+          "earlySpeed": 0.5,
+          "final": {
+            "loaded": true,
+            "paused": false,
+            "rate": 1,
+            "waterRate": 1,
+            "movement": true,
+            "travelGait": "Run",
+            "transitions": 5,
+            "speed": 0,
+            "visualLean": [
+              0.0009412388908263622,
+              1.0452705620108826e-10
+            ],
+            "clip": "Idle",
+            "time": 0,
+            "position": [
+              0,
+              0.026484375,
+              3
+            ],
+            "target": null,
+            "actions": [
+              {
+                "name": "DanceA",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Eat",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Idle",
+                "weight": 1,
+                "scheduled": true,
+                "running": true
+              },
+              {
+                "name": "PetReaction",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Run",
+                "weight": 1,
+                "scheduled": true,
+                "running": true
+              },
+              {
+                "name": "Swim",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "SwimIdle",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "Walk",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "WaterCharge",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              },
+              {
+                "name": "WaterShoot",
+                "weight": 0,
+                "scheduled": false,
+                "running": false
+              }
+            ],
+            "hearts": 0
+          },
+          "settledLean": [
+            0.0000017284014715498383,
+            7.783694071605799e-13
+          ]
+        }
+      }
+    },
+    {
+      "name": "Turning produces a small, bounded bank rather than a rigid upright swivel",
+      "passed": true,
+      "details": [
+        0.024318290265460174,
+        0.045004071589628714
+      ]
+    },
+    {
+      "name": "High-contrast ring stays about 40 CSS pixels wide on desktop and mobile, with no path line",
+      "passed": true,
+      "details": {
+        "desktop": {
+          "visible": true,
+          "phase": "hold",
+          "age": 0.4002000000000003,
+          "worldRadius": 0.2503616615185967,
+          "nominalDiameterPixels": 36,
+          "pixelWidth": 40.94562210632398,
+          "position": [
+            2,
+            0.04588647959183643,
+            -4
+          ],
+          "routeLines": 0
+        },
+        "mobile": {
+          "visible": true,
+          "phase": "hold",
+          "age": 0.4002000000000003,
+          "worldRadius": 0.6194512904845942,
+          "nominalDiameterPixels": 36,
+          "pixelWidth": 40.64206738146018,
+          "position": [
+            2,
+            0.04588647959183643,
+            -4
+          ],
+          "routeLines": 0
+        }
+      }
+    },
+    {
+      "name": "Arrival closes and fades the destination ring",
+      "passed": true,
+      "details": true
+    },
+    {
+      "name": "Repeated destinations reuse the marker geometry and materials",
+      "passed": true,
+      "details": {
+        "before": {
+          "geometries": 87,
+          "textures": 9,
+          "programs": 21
+        },
+        "after": {
+          "geometries": 87,
+          "textures": 9,
+          "programs": 21
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

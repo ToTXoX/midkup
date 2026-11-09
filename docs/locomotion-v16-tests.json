@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "checks": [
+    "Both clips keep flat paws, stable lateral placement, clear ground contact and seamless loops",
+    "Walk stays grounded; Run has a short airborne phase; both preserve movement speed",
+    "Supporting paws remain stationary in the garden while the character advances"
+  ],
+  "results": {
+    "Walk": {
+      "duration": 0.4,
+      "minY": 0.0009349758535293993,
+      "maxY": 0.0010132232131371656,
+      "minRoot": -0.026000000536441803,
+      "maxRoot": -0.021999999892976633,
+      "maxFootRotation": 0.00007845646888449919,
+      "maxLateral": 0.000016612622981165837,
+      "airborne": 0,
+      "stanceResidual": 5.028092977775456e-7,
+      "seam": 0.0000013518311827165341,
+      "garden": {
+        "maxPlantDrift": 0.000014511539798915331,
+        "samples": 206,
+        "peakSpeed": 0.6607142857142856
+      }
+    },
+    "Run": {
+      "duration": 0.35,
+      "minY": 0.00018284106415108504,
+      "maxY": 0.03444227647738351,
+      "minRoot": -0.0379743352489863,
+      "maxRoot": -0.00029652024984963294,
+      "maxFootRotation": 0.00009078834725936156,
+      "maxLateral": 0.00004743466857477785,
+      "airborne": 38,
+      "stanceResidual": 0.00011314258286790335,
+      "seam": 0.000002264160370940571,
+      "garden": {
+        "maxPlantDrift": 0.00006640875259118923,
+        "samples": 96,
+        "peakSpeed": 1.5446428571428572
+      }
+    }
+  },
+  "errors": []
+}

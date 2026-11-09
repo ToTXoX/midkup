@@ -1,0 +1,113 @@
+00:01.453  blend            | Read blend: "C:\Users\qiank\Desktop\apprun\3d\mudkip\mudkip-garden-v11-perspective.blend"
+BlenderMCP addon registered
+BAKING_VERTEX_COLORS 365
+BAKE_COMPLETE
+INFO Draco is available, use library at C:\Program Files\Blender Foundation\Blender 5.2\5.2\scripts\addons_core\io_scene_gltf2\bf_intern_draco_bridge.dll
+INFO MeshOptimizer is available, use library at C:\Program Files\Blender Foundation\Blender 5.2\5.2\scripts\addons_core\io_scene_gltf2\bf_intern_meshopt_bridge.dll
+14:53:53 | INFO: Starting glTF 2.0 export
+14:53:53 | INFO: Extracting primitive: Cylinder.074
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.072
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.073
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.071
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cube.178
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.068
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.069
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.070
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Finished glTF 2.0 export in 0.057439565658569336 s
+
+14:53:53 | INFO: Starting glTF 2.0 export
+14:53:53 | INFO: Extracting primitive: Cylinder.081
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.079
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.080
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.078
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cube.179
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.075
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Sphere.281
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Sphere.280
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.076
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.077
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Finished glTF 2.0 export in 0.023421525955200195 s
+
+14:53:53 | INFO: Starting glTF 2.0 export
+14:53:53 | INFO: Extracting primitive: Cylinder.088
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.086
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.087
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.085
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cube.180
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.082
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Heavy target shield badge.001
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cube.182
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cube.181
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.083
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cylinder.084
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Finished glTF 2.0 export in 0.022599220275878906 s
+
+14:53:53 | INFO: Starting glTF 2.0 export
+14:53:53 | INFO: Extracting primitive: Sphere.286
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Sphere.287
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Finished glTF 2.0 export in 0.011527776718139648 s
+
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+14:53:53 | INFO: Starting glTF 2.0 export
+14:53:53 | INFO: Extracting primitive: Cylinder.046
+14:53:53 | INFO: Primitives created: 4
+14:53:53 | INFO: Extracting primitive: Cube.183
+14:53:53 | INFO: Primitives created: 16
+14:53:53 | INFO: Extracting primitive: Cube.247
+14:53:53 | INFO: Primitives created: 7
+14:53:53 | INFO: Extracting primitive: Meadow grass clumps.001
+14:53:53 | INFO: Primitives created: 5
+14:53:53 | INFO: Extracting primitive: Garden grass terrain with recessed pond.001
+14:53:53 | INFO: Primitives created: 2
+14:53:53 | INFO: Extracting primitive: Designed planting Tree_1_B_Color1.001
+14:53:53 | INFO: Primitives created: 7
+14:53:53 | INFO: Extracting primitive: Icosphere.061
+14:53:53 | INFO: Primitives created: 4
+14:53:53 | INFO: Extracting primitive: Pond water surface.001
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Moving target rail
+14:53:53 | INFO: Primitives created: 1
+14:53:53 | INFO: Extracting primitive: Cube.176
+14:53:53 | INFO: Primitives created: 3
+14:53:53 | INFO: Finished glTF 2.0 export in 0.21181368827819824 s
+
+Info: Deleted 978 data-block(s)
+Info: Saved as "garden-runtime.blend"
+GARDEN_READY {"source": "mudkip-garden-v11-perspective.blend", "source_visible_objects": 365, "export_groups": 10, "vertices": 84582, "triangles": 157071, "color_layers": {"Terrain_Base": 1, "NAV_Ground": 1, "Pond_Water": 1, "Pond_Details": 1, "Basket": 1, "Flowers_Grass": 1, "Target_Rail": 1, "Cottage": 1, "Fence_Path": 1, "Planting": 1}, "colliders": 22, "objects": ["Terrain_Base", "NAV_Ground", "Pond_Water", "Pond_Details", "Basket", "Flowers_Grass", "Target_Rail", "Cottage", "Fence_Path", "Planting"]}
+BlenderMCP addon unregistered
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:37:16)
+
+Blender quit
