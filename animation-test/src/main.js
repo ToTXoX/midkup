@@ -80,7 +80,7 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 $('scene').appendChild(renderer.domElement);
 renderer.domElement.tabIndex=0;
 renderer.domElement.draggable=false;
-renderer.domElement.setAttribute('aria-label','庭院：点击水跃鱼跳舞，点击草地移动，右下角水枪键喷水，拖动技能键瞄准');
+renderer.domElement.setAttribute('aria-label','庭院：点击 zuzu 跳舞，点击草地移动，右下角水枪键喷水，拖动技能键瞄准');
 
 const STAGE_FOV=36;
 const camera = new THREE.PerspectiveCamera(STAGE_FOV, 1, .05, 40);
@@ -928,7 +928,7 @@ try {
       key.shadow.camera.updateProjectionMatrix();key.position.set(garden?-6:-2.5,garden?12:4.5,garden?8:3);
       toon.setView(garden?'garden':'stage');
       $('resource-hint').textContent=garden?'点果树瞄准 · 用水枪打落果子。':'十二段动作 · 可以逐帧查看。';
-      $('view-hint').textContent=garden?'点水跃鱼跳舞 · 拖动旋转':'拖动旋转 · 滚轮缩放';
+      $('view-hint').textContent=garden?'点 zuzu 跳舞 · 拖动旋转':'拖动旋转 · 滚轮缩放';
       resetView();
     });
     const changeView=(view)=>{$('scene-view').value=view;$('scene-view').dispatchEvent(new Event('change'));};
