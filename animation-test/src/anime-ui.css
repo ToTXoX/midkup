@@ -141,7 +141,6 @@
   .title-short { display: inline; }
   .brand-kana { font-size: 7px; letter-spacing: .8px; margin-top: 2px; }
   .resource .view-hint { top: 91px; right: 16px; font-size: 9px; }
-  .resource.garden-active .view-hint { top: 88px; right: 17px; font-size: 8px; }
   .resource #view-hint { padding: 4px 7px; }
   .practice-score { top: 19px; right: 17px; min-width: 102px; height: 54px; padding: 6px 21px 6px 9px; gap: 6px; box-shadow: 2px 3px 0 #54758355,inset 0 0 0 3px #f8d99c; }
   .score-star { width: 19px; height: 19px; }
@@ -150,7 +149,6 @@
   .practice-score strong { font-size: 23px; }
   .practice-score button { width: 20px; height: 20px; right: 2px; top: 3px; }
   .practice-score button svg { width: 12px; height: 12px; }
-  .resource .garden-music-toggle { top: 111px; right: 17px; }
   .garden-chapter { margin: 0 -13px 9px; padding: 5px 12px; border-radius: 11px 3px 0 0; font-size: 8px; letter-spacing: 1px; }
   .buddy-name { font-size: 9px; margin-top: 3px; }
   .buddy-name span { font-size: 7px; }
@@ -159,11 +157,6 @@
   .resource .garden-controls .garden-tip { font-size: 8px; margin: 9px 0 7px; }
   .resource .garden-buttons { padding-top: 7px; gap: 5px; }
   .resource .garden-buttons button { min-height: 27px; padding: 4px 0; font-size: 10px; }
-  .resource .water-skill { bottom: 259px; right: 10px; gap: 10px; }
-  .resource :is(.tackle-button,.mud-button) { bottom: 113px; width: 61px; height: 61px; }
-  .resource .tackle-button { right: calc(100% - 12px); }
-  .resource .mud-button { right: calc(100% + 59px); }
-  .resource .water-skill>span { font-size: 8px; padding: 4px 7px; }
   .resource .skill-thumb strong { font-size: 12px; }
   .resource .skill-spark { width: 20px; height: 20px; }
   .resource .hit-pop { font-size: 15px; -webkit-text-stroke: 2px var(--ui-ink); }
@@ -226,14 +219,12 @@
   .buddy-stamp { width: 52px; height: 52px; padding: 4px; }
   .garden-dialog { padding-inline: 12px; }
   .resource .garden-buttons button { height: 34px; min-height: 34px; }
-  .resource .water-skill { right: 7px; }
 }
 .resource .garden-buttons button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 42px; min-height: 42px; padding: 4px 2px; }
 .resource .garden-buttons svg { width: 19px; height: 19px; }
 .resource .garden-buttons button span { font-size: 9px; line-height: 11px; font-weight: 600; }
 .resource .gait-switch { width: 92px; height: 34px; padding: 3px; border: 1.5px solid var(--ui-ink); border-radius: 18px; background: var(--ui-paper); box-shadow: 0 2px 0 #758c9255; color: var(--ui-ink); }
 .resource .skill-stick { top: 29px; }
-@media(max-width:700px) { .resource .skill-stick { top: 23px; } }
 .gait-track { position: relative; display: grid; grid-template-columns: 1fr 1fr; height: 25px; align-items: center; border-radius: 13px; background: #e6ece2; }
 .gait-track:before { content: ''; position: absolute; top: 2px; left: 2px; width: calc(50% - 2px); height: 21px; border-radius: 11px; background: #fffdf1; box-shadow: 0 1px 2px #536c7433; transition: transform .15s,background .15s; }
 .gait-track>span { position: relative; font-size: 11px; font-weight: 700; line-height: 25px; }
@@ -252,3 +243,68 @@
 .resource .garden-menu-panel button { height: 48px; min-height: 48px; padding: 4px 2px; }
 .resource .garden-menu-panel svg { width: 21px; height: 21px; }
 @media(prefers-reduced-motion:reduce) { .garden-menu-toggle svg { transition: none; } }
+
+.garden-dock { display: contents; }
+@media (max-width: 700px), (max-height: 500px) and (pointer: coarse) {
+  .resource.garden-active #app {
+    --garden-top: max(12px, env(safe-area-inset-top));
+    --garden-left: max(12px, env(safe-area-inset-left));
+    --garden-right: max(12px, env(safe-area-inset-right));
+    height: 100dvh;
+  }
+  .resource.garden-active header { top: var(--garden-top); left: var(--garden-left); gap: 7px; }
+  .resource.garden-active .brand-mark { width: 42px; height: 42px; }
+  .resource.garden-active .eyebrow { font-size: 7px; letter-spacing: 1px; }
+  .resource.garden-active h1 { font-size: clamp(16px, 4.5vw, 20px); letter-spacing: 1px; gap: 5px; }
+  .resource.garden-active h1 svg { width: 13px; height: 13px; }
+  .resource.garden-active .brand-kana { display: none; }
+  .resource.garden-active .practice-score {
+    top: var(--garden-top); right: calc(var(--garden-right) + 52px);
+    min-width: 86px; height: 44px; gap: 5px; padding: 4px 23px 4px 8px;
+    box-shadow: 2px 3px 0 #54758355, inset 0 0 0 3px #f8d99c;
+  }
+  .resource.garden-active .score-star { width: 15px; height: 15px; }
+  .resource.garden-active .practice-score>div>span { font-size: 8px; }
+  .resource.garden-active .practice-score small { display: none; }
+  .resource.garden-active .practice-score strong { font-size: 20px; }
+  .resource.garden-active .practice-score button { top: 2px; right: 2px; width: 20px; height: 20px; }
+  .resource.garden-active .practice-score button svg { width: 12px; height: 12px; }
+  .resource .garden-music-toggle { top: var(--garden-top); right: var(--garden-right); width: 44px; height: 44px; }
+  .resource.garden-active .view-hint { top: calc(var(--garden-top) + 57px); right: var(--garden-right); font-size: 9px; }
+  .resource .garden-menu { top: calc(var(--garden-top) + 50px); left: var(--garden-left); align-items: flex-start; transform: none; }
+  .resource .garden-menu-toggle { width: 44px; height: 44px; }
+  .resource .garden-menu-panel { width: auto; grid-template-columns: repeat(4, 44px); gap: 4px; padding: 5px; }
+  .resource .garden-menu-panel button { height: 44px; min-height: 44px; }
+
+  .garden-dock {
+    position: absolute; z-index: 5; right: var(--garden-right); bottom: max(12px, env(safe-area-inset-bottom)); left: var(--garden-left);
+    display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none;
+  }
+  .resource .garden-dock .water-skill {
+    position: relative; inset: auto; width: 100%;
+    display: grid; grid-template-columns: 54px 54px 64px 74px; grid-template-rows: 64px auto;
+    justify-content: center; justify-items: center; align-items: center; gap: 8px 12px;
+  }
+  .resource .garden-dock .water-skill>button { pointer-events: auto; }
+  .resource .garden-dock .skill-button { position: relative; inset: auto; width: 54px; height: 54px; }
+  .resource .garden-dock .skill-button::after { inset: 4px; }
+  .resource .garden-dock .skill-thumb svg { width: 21px; height: 21px; }
+  .resource .garden-dock .skill-thumb strong { font-size: 11px; line-height: 15px; letter-spacing: 1px; }
+  .resource .garden-dock #garden-mud { grid-area: 1 / 1; }
+  .resource .garden-dock #garden-tackle { grid-area: 1 / 2; }
+  .resource .garden-dock #garden-fire { grid-area: 1 / 3; width: 64px; height: 64px; }
+  .resource .garden-dock #garden-fire .skill-thumb svg { width: 24px; height: 26px; }
+  .resource .garden-dock .skill-spark { width: 17px; height: 17px; }
+  .resource .garden-dock .gait-switch { grid-area: 1 / 4; width: 74px; height: 44px; }
+  .resource .garden-dock .skill-stick { grid-area: 1 / 3 / 2 / 4; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+  .resource .garden-dock #skill-caption { grid-area: 2 / 1 / 3 / -1; padding: 3px 8px; font-size: 9px; }
+  .resource .garden-dock .garden-controls { position: static; width: 100%; padding-top: 10px; gap: 11px; }
+  .resource .garden-dock .buddy-stamp { width: 44px; height: 44px; padding: 3px; }
+  .resource .garden-dock .garden-dialog { padding: 13px 11px 8px; }
+  .resource .garden-dock .garden-speaker { top: -11px; font-size: 14px; }
+  .resource .garden-dock .garden-feedback { font-size: 15px; }
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    .garden-dock { left: auto; width: 296px; }
+  }
+}

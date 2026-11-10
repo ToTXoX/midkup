@@ -42,10 +42,16 @@ try{
   await page.locator('#scene canvas').focus();await page.keyboard.press('Space');await simulate(1);assert.equal((await read()).combat.shot,paused);await gardenAction(page,'继续');
   pass('Pause disables both the skill button and keyboard casting');
 
-  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(100);await gardenAction(page,'回到起点');
-  const mobile=await page.locator('#garden-fire').boundingBox(),panel=await page.locator('#garden-controls').boundingBox();assert(mobile.width>=80&&(mobile.y+mobile.height<panel.y-12||mobile.x>=panel.x+panel.width+12)&&mobile.x+mobile.width<390);
+  const phoneViewport={width:402,height:686};
+  await page.setViewportSize(phoneViewport);await page.waitForTimeout(100);await gardenAction(page,'回到起点');
+  const mobile=await page.locator('#garden-fire').boundingBox(),panel=await page.locator('#garden-controls').boundingBox();
+  const row=await Promise.all(['garden-mud','garden-tackle','garden-fire','garden-gait'].map(id=>page.locator(`#${id}`).boundingBox()));
+  assert(mobile.width>=60&&mobile.y+mobile.height<panel.y-12&&mobile.x+mobile.width<phoneViewport.width);
+  assert(row.every((button,i)=>button.width>=44&&button.height>=44&&Math.abs(button.y+button.height/2-mobile.y-mobile.height/2)<1&&(!i||button.x>=row[i-1].x+row[i-1].width)));
+  const character=await page.evaluate(()=>{const api=window.__mudkipTest;const [x,y,z]=api.snapshot().position;return api.project(x,y+.35,z);});
+  assert(character.y<Math.min(...row.map(button=>button.y))-8,'The character must remain above the phone controls');
   await page.touchscreen.tap(mobile.x+mobile.width/2,mobile.y+mobile.height/2);await simulate(.55);data=await read();assert(data.fx.stream&&data.combat.targetId===null);assert.equal(data.combat.shot,paused+1);await shot('mobile-free');await simulate(2);
-  pass('Phone users can tap an 82-pixel skill key to spray freely, with no target or keyboard',{mobile,panel});
+  pass('Phone users can spray freely from a single row of touch controls above the dialogue',{mobile,panel});
 
   await gardenAction(page,'回到起点');
   const touch=await center(),session=await page.context().newCDPSession(page),beforeTouch=(await read()).combat.shot;

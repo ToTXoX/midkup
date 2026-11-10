@@ -102,11 +102,28 @@ function resetView() {
   camera.far=40;
   camera.clearViewOffset();
   if (garden) {
-    const mobile=innerWidth<=700;
-    const sideInset=mobile?14:Math.min(48,innerWidth*.06);
+    const dock = $('garden-dock').getBoundingClientRect();
+    const compact = dock.width > 0;
+    const sideInset = compact ? 12 : Math.min(48,innerWidth*.06);
     const desktopInset=THREE.MathUtils.lerp(72,36,THREE.MathUtils.smoothstep(innerHeight,650,1000));
-    const verticalInset=mobile&&innerHeight>=innerWidth?Math.min(186,innerHeight*.39):Math.min(desktopInset,innerHeight*.13);
-    const width=innerWidth-2*sideInset,height=innerHeight-2*verticalInset;
+    const verticalInset = Math.min(desktopInset, innerHeight * .13);
+    let rightEdge = innerWidth - sideInset;
+    let topEdge = verticalInset;
+    let bottomEdge = innerHeight - verticalInset;
+    if (compact) {
+      const topControls = ['garden-score', 'garden-music', 'garden-menu-toggle', 'view-hint'];
+      topEdge = Math.max(...topControls.map(id => $(id).getBoundingClientRect().bottom)) + 12;
+      if (innerWidth > innerHeight && innerHeight <= 500) {
+        rightEdge = dock.left - 12;
+        bottomEdge = innerHeight - 12;
+      } else {
+        bottomEdge = dock.top - 12;
+      }
+    }
+    const width = Math.max(1, rightEdge - sideInset);
+    const height = Math.max(1, bottomEdge - topEdge);
+    const frameX = sideInset + width / 2;
+    const frameY = topEdge + height / 2;
     const direction = new THREE.Vector3().fromArray(resourcePreview.layout.camera.position)
       .sub(new THREE.Vector3().fromArray(resourcePreview.layout.camera.target));
     direction.y *= .73;
@@ -135,7 +152,7 @@ function resetView() {
     scene.fog.near=camera.far;
     scene.fog.far=camera.far+50*lensScale;
     controls.target.copy(center);camera.position.copy(center).addScaledVector(direction,distance);
-    camera.setViewOffset(innerWidth,innerHeight,view.centerX-innerWidth/2,view.centerY-innerHeight/2,innerWidth,innerHeight);
+    camera.setViewOffset(innerWidth,innerHeight,view.centerX-frameX,view.centerY-frameY,innerWidth,innerHeight);
     controls.update();
     return;
   }
@@ -663,9 +680,6 @@ function updateCombatUI(){
   const tackling=!!tackle?.active;
   const groundBusy=groundSkillActive();
   const gesture=skillInput?.debug()??{active:false,dragging:false,offset:[0,0]};
-  $('garden-skill').hidden=!garden;
-  $('garden-score').hidden=!garden;
-  $('garden-menu').hidden=!garden;
   const basket=resourcePreview.basketInfo;
   $('garden-basket').hidden=!garden||!basket;
   if(garden&&basket){
@@ -906,6 +920,9 @@ try {
     $('scene-view').addEventListener('change',(event)=>{
       const garden=event.target.value==='garden';
       musicToggle.hidden = !garden;
+      $('garden-score').hidden = !garden;
+      $('garden-menu').hidden = !garden;
+      $('garden-dock').hidden = !garden;
       if (!garden) music.pause();
       setGardenMenu(false);
       setFruitHover();
@@ -913,7 +930,7 @@ try {
       controls.enabled=true;
       if(garden)state.waterRate=1;
       combat.setMode('move');combat.cancel();
-      document.body.classList.toggle('garden-active',garden);$('garden-controls').hidden=!garden;
+      document.body.classList.toggle('garden-active',garden);
       resourcePreview.setView(event.target.value);
       waterFramed=false;
       stopTravel();clearHearts();playClip('Idle',{immediate:true});
