@@ -14,6 +14,8 @@ v0.13.1：游泳时使用少量较大的断续浪纹，增加划水处的白色�
 
 庭院移动入口为 <http://127.0.0.1:5173/resources.html?scene=garden>。点击草地后自动转向、寻路并绕开静态障碍；支持走路、小跑、暂停、途中改点和回到起点。`npm run test:movement` 检查碰撞几何与真实浏览器操作，模块位于 `src/garden-navigation.js`，接入说明位于 `../game-assets/gameplay/README.md`。
 
+庭院右上角可开启背景音乐。曲目为 Bobjt 的 [peacefull ville（2023 版）](https://opengameart.org/content/peacefull-ville)，按 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) 发布。
+
 v0.8 重做轻快走与弹性小跑，速度约 0.66 / 1.54 米每秒，加入起停缓冲和转弯侧倾。落点使用醒目的白边薄荷绿圆环，不绘制路线。`npm run test:movement-feel` 检查速度、起停、圆环尺寸、淡出和重复改点资源复用。
 
 v0.9 加入庭院水枪练习：点靶子锁定，按空格或「喷水」发射；点「瞄准」可在草地上自由选点，Esc 返回移动。水跃鱼先转身、抬头并闭嘴蓄水，水实际撞上靶面后显示回弹、水色闪光、水花与「命中 +1」。每发只计一次，支持射程提示、障碍遮挡、移动打断、暂停及触控。`npm run test:combat` 验证完整流程。

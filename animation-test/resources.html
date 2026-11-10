@@ -1,8 +1,31 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#fff9e9"/><link rel="icon" type="image/png" sizes="64x64" href="/favicon.png"/><title>水跃鱼 · 庭院日和</title></head>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#fff9e9"/>
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png"/>
+  <link rel="stylesheet" href="/src/garden-loading.css"/>
+  <link rel="preload" href="/assets/game/manifest.json" as="fetch" crossorigin/>
+  <link rel="preload" href="/assets/game/characters/mudkip/mudkip.glb" as="fetch" crossorigin/>
+  <link rel="preload" href="/assets/game/environments/garden.glb" as="fetch" crossorigin/>
+  <link rel="preload" href="/assets/game/fx/textures/cartoon-splash-v14.png" as="image" crossorigin fetchpriority="low"/>
+  <title>水跃鱼 · 庭院日和</title>
+</head>
 <body data-pack="game" class="resource">
-<main id="app">
+<section id="garden-loading" class="garden-loading" aria-labelledby="garden-load-title">
+  <div class="garden-loading-card">
+    <div class="garden-loading-avatar" aria-hidden="true"><img src="/assets/ui/mudkip-avatar-user-v1.png" alt="" draggable="false" width="68" height="68"/></div>
+    <p class="garden-loading-series">MUDKIP · GARDEN DAYS</p>
+    <h2 id="garden-load-title">水跃鱼的庭院</h2>
+    <div class="garden-loading-caption">
+      <span>正在准备庭院…</span>
+      <span id="garden-load-percent" aria-hidden="true">0%</span>
+    </div>
+    <progress id="garden-load-progress" max="8" value="0" aria-label="庭院资源加载进度"></progress>
+  </div>
+</section>
+<main id="app" inert>
   <svg class="ui-symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
     <symbol id="ui-mudkip" viewBox="0 0 64 64">
       <g stroke="#3e687f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -31,6 +54,18 @@
   <div id="scene" aria-label="水跃鱼游戏资源三维预览"></div>
   <header><span class="brand-mark" aria-hidden="true"><img src="./assets/ui/mudkip-avatar-user-v1.png" alt="" draggable="false" width="66" height="66"/></span><div><span class="eyebrow">MUDKIP · GARDEN DAYS</span><h1><span class="title-full">水跃鱼的庭院</span><span class="title-short">庭院日和</span><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#ui-star"/></svg></h1><span class="brand-kana" aria-hidden="true">きょうも、いっしょに。</span></div></header>
   <aside id="garden-score" class="practice-score" aria-label="练习命中次数" hidden><svg class="score-star" aria-hidden="true" viewBox="0 0 24 24"><use href="#ui-star"/></svg><div><span>技能练习 <small>HIT!</small></span><strong id="garden-hit-count">00</strong></div><button id="garden-clear-hits" aria-label="清空命中" title="清空命中"><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#ui-reset"/></svg></button></aside>
+  <button id="garden-music" class="garden-music-toggle" type="button" aria-label="背景音乐" aria-pressed="false" hidden>
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M9 18V6l10-2v11M9 10l10-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      <ellipse cx="6" cy="18" rx="3.5" ry="2.5" fill="currentColor"/>
+      <ellipse cx="16" cy="15" rx="3.5" ry="2.5" fill="currentColor"/>
+      <g class="music-off-mark" fill="none" stroke-linecap="round">
+        <path d="M4 4l16 16" stroke="var(--ui-paper)" stroke-width="4"/>
+        <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6"/>
+      </g>
+    </svg>
+  </button>
+  <audio id="garden-bgm" src="/assets/audio/peaceful-ville.mp3" preload="none" loop></audio>
   <div class="view-hint"><span id="view-hint">拖动旋转 · 滚轮缩放</span><button id="enter-garden" class="garden-entry" disabled>去庭院散步 →</button></div>
   <section class="controls" aria-label="动画控制">
     <div class="panel-heading"><span class="dot"></span><span id="clip-label" aria-live="polite">正在整理小伙伴…</span><span id="duration">—</span></div>

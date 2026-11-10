@@ -9,17 +9,25 @@ import { createFruitModels, createGardenFruit } from './garden-fruit.js';
 import { createCottageMeadow } from './garden-meadow.js';
 import { createGardenWindChime } from './garden-wind-chime.js';
 
-export async function createResourcePreview({renderer,scene,actor,model,root,metadata,stageColliders,toon,heartTexture,onWaterContact=()=>{}}) {
+export async function loadResourcePreviewAssets(root, track) {
   const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const getJSON=async(path)=>{const r=await fetch(root+path);if(!r.ok)throw new Error(`资源读取失败：${path}`);return r.json();};
-  const manifest=await getJSON('manifest.json');
-  const [layout,fruitLayout]=await Promise.all([
-    getJSON(manifest.level),manifest.fruitLevel?getJSON(manifest.fruitLevel):null,
+  const loadModel = (path) => loader.loadAsync(root + path);
+  const manifest = await track(getJSON('manifest.json'));
+  const level = getJSON(manifest.level);
+  const [[layout, fruitLayout], garden, [berry, targets]] = await Promise.all([
+    track(Promise.all([level, manifest.fruitLevel ? getJSON(manifest.fruitLevel) : null])),
+    track(loadModel(manifest.environment)),
+    track(Promise.all([
+      loadModel(manifest.props.berry),
+      level.then(layout => Promise.all(layout.targets.map(target => loadModel(target.asset)))),
+    ])),
   ]);
-  const [garden,berry,...targets]=await Promise.all([
-    loader.loadAsync(root+manifest.environment),loader.loadAsync(root+manifest.props.berry),
-    ...layout.targets.map((t)=>loader.loadAsync(root+t.asset)),
-  ]);
+  return { layout, fruitLayout, garden, berry, targets };
+}
+
+export async function createResourcePreview({renderer,scene,actor,model,root,assets,metadata,stageColliders,toon,heartTexture,onWaterContact=()=>{}}) {
+  const { layout, fruitLayout, garden, berry, targets } = assets;
   const environment=new THREE.Group();
   environment.name='Garden Resources';
   environment.add(garden.scene);

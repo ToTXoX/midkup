@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import './style.css';
 import './anime-ui.css';
-import { createResourcePreview } from './resource-preview.js';
+import { createResourcePreview, loadResourcePreviewAssets } from './resource-preview.js';
 import { createToonStyle } from './toon-style.js';
 import { createGardenNavigation,createGardenWalker } from './garden-navigation.js';
 import { createDestinationMarker } from './destination-marker.js';
@@ -23,6 +23,29 @@ preventGameSelection(document.getElementById('app'));
 const $ = (id) => document.getElementById(id);
 const resourceMode = document.body.dataset.pack === 'game';
 const resourceRoot = `${import.meta.env.BASE_URL}assets/game/`;
+const gardenLoading = $('garden-loading');
+function advanceGardenLoading() {
+  const progress = $('garden-load-progress');
+  progress.value += 1;
+  $('garden-load-percent').textContent = `${Math.round(100 * progress.position)}%`;
+}
+async function trackGardenLoad(promise) {
+  const result = await promise;
+  advanceGardenLoading();
+  return result;
+}
+function hideGardenLoading() {
+  if (gardenLoading) {
+    gardenLoading.hidden = true;
+    $('app').inert = false;
+  }
+}
+function showLoadError(error) {
+  hideGardenLoading();
+  $('error').hidden = false;
+  $('error').textContent = `加载失败：${error.message}。请刷新页面重试。`;
+  $('status').textContent = '加载失败';
+}
 const defaultMetadata = { clips: [{name:'Idle',loop:true},{name:'Walk',loop:true},{name:'PetReaction',loop:false}], locomotion:{Walk:{speed:.13/(.8*.62)}} };
 let metadata = defaultMetadata;
 let clipSettings = new Map(metadata.clips.map((c)=>[c.name,c]));
@@ -41,7 +64,13 @@ let eyeExpressions=null;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#e6eee6');
 scene.fog = new THREE.Fog('#e6eee6', 5, 12);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+} catch (error) {
+  showLoadError(error);
+  throw error;
+}
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -78,7 +107,10 @@ function resetView() {
     const desktopInset=THREE.MathUtils.lerp(72,36,THREE.MathUtils.smoothstep(innerHeight,650,1000));
     const verticalInset=mobile&&innerHeight>=innerWidth?Math.min(186,innerHeight*.39):Math.min(desktopInset,innerHeight*.13);
     const width=innerWidth-2*sideInset,height=innerHeight-2*verticalInset;
-    const direction=new THREE.Vector3().fromArray(resourcePreview.layout.camera.position).sub(new THREE.Vector3().fromArray(resourcePreview.layout.camera.target)).normalize();
+    const direction = new THREE.Vector3().fromArray(resourcePreview.layout.camera.position)
+      .sub(new THREE.Vector3().fromArray(resourcePreview.layout.camera.target));
+    direction.y *= .73;
+    direction.normalize();
     const right=new THREE.Vector3().crossVectors(camera.up,direction).normalize(),up=new THREE.Vector3().crossVectors(direction,right);
     const box=resourcePreview.bounds,center=box.getCenter(new THREE.Vector3());
     const source=resourcePreview.fitPoints,coordinates=new Float32Array(source.length),p=new THREE.Vector3();
@@ -216,6 +248,7 @@ actor.position.y = .005;
 scene.add(actor);
 const visualPivot=new THREE.Group();actor.add(visualPivot);
 const motion={speed:0,bank:0,pitch:0};
+const gardenRunSpeedMultiplier = 1.25;
 let model, mixer, active, currentName, target = null;
 const actions = new Map();
 const state = { loaded: false, paused: false, rate: 1, waterRate: 1, movement: false, travelGait:'Run', transitions: 0 };
@@ -751,12 +784,22 @@ window.__mudkipTest = {
 };
 
 try {
-  if(resourceMode){
-    const response=await fetch(resourceRoot+'characters/mudkip/animations.json');
-    if(!response.ok)throw new Error('动画配置加载失败');
-    metadata=await response.json();clipSettings=new Map(metadata.clips.map((c)=>[c.name,c]));
+  let gltf, previewAssets;
+  const loader = new GLTFLoader();
+  if (resourceMode) {
+    const animationMetadata = fetch(resourceRoot + 'characters/mudkip/animations.json').then(response => {
+      if (!response.ok) throw new Error('动画配置加载失败');
+      return response.json();
+    });
+    [gltf, metadata, previewAssets] = await Promise.all([
+      trackGardenLoad(loader.loadAsync(resourceRoot + 'characters/mudkip/mudkip.glb')),
+      trackGardenLoad(animationMetadata),
+      loadResourcePreviewAssets(resourceRoot, trackGardenLoad),
+    ]);
+    clipSettings = new Map(metadata.clips.map(clip => [clip.name, clip]));
+  } else {
+    gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/mudkip.glb`);
   }
-  const gltf = await new GLTFLoader().loadAsync(resourceMode ? resourceRoot+'characters/mudkip/mudkip.glb' : `${import.meta.env.BASE_URL}assets/mudkip.glb`);
   model = gltf.scene;
   visualPivot.add(model);
   toon?.apply(model,'character');
@@ -788,7 +831,7 @@ try {
     if(danced)gardenFeedback('跳完啦，点我再跳一支～');
   });
   if(resourceMode){
-    resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,metadata,stageColliders:[stage,floor],toon,heartTexture,onWaterContact:event=>combat?.contact(event)});
+    resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,assets:previewAssets,metadata,stageColliders:[stage,floor],toon,heartTexture,onWaterContact:event=>combat?.contact(event)});
     footprints=createGardenFootprints({scene,actor,model,clips:metadata.clips,
       sampleSurface:resourcePreview.footprintSurface,isWater:point=>swimming?.contains(point)});
     combat=createGardenCombat({actor,model,preview:resourcePreview,
@@ -836,9 +879,34 @@ try {
       onMessage:gardenFeedback,onSplash:(point,options)=>resourcePreview.pondWater.splash(point,options),onLand:()=>footprints.wet()});
     if(!navigation.isWalkable([resourcePreview.layout.spawn.position[0],resourcePreview.layout.spawn.position[2]]))throw new Error('庭院出生点位于障碍内');
     toon.excludeUnstyled();
+    const music = $('garden-bgm');
+    const musicToggle = $('garden-music');
+    music.volume = .25;
+    const syncMusicToggle = () => {
+      musicToggle.setAttribute('aria-pressed', String(!music.paused));
+    };
+    music.addEventListener('playing', syncMusicToggle);
+    music.addEventListener('pause', syncMusicToggle);
+    musicToggle.addEventListener('click', async () => {
+      if (!music.paused) {
+        music.pause();
+        return;
+      }
+      try {
+        if (music.error) music.load();
+        await music.play();
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        music.pause();
+        syncMusicToggle();
+        gardenFeedback('音乐播放失败，点开关重试。');
+      }
+    });
     $('scene-view').disabled=false;
     $('scene-view').addEventListener('change',(event)=>{
       const garden=event.target.value==='garden';
+      musicToggle.hidden = !garden;
+      if (!garden) music.pause();
       setGardenMenu(false);
       setFruitHover();
       skillInput.cancel();
@@ -895,7 +963,6 @@ try {
   diagnostics.meshes = meshes.length;
   diagnostics.bones = [...skeletons].map((s) => s.bones.length);
   diagnostics.textures = [...maps].map((t) => ({ name: t.name, width: t.image.width, height: t.image.height, colorSpace: t.colorSpace }));
-  diagnostics.ready = true;
   document.querySelectorAll('.controls button, .controls input').forEach((e) => e.disabled = false);
   $('status').textContent = resourceMode ? `小伙伴准备好啦` : `GLB 已加载 · ${gltf.animations.length} 段动作 · ${[...skeletons][0].bones.length} 根骨骼`;
   playClip('Idle', { immediate: true });
@@ -907,11 +974,11 @@ try {
   }
   const previewClip = params.get('clip');
   if(resourceMode&&resourcePreview.view==='stage'&&actions.has(previewClip))playClip(previewClip,{immediate:true});
+  if (resourceMode) advanceGardenLoading();
 } catch (error) {
+  state.loaded = false;
   diagnostics.errors.push(error.message);
-  $('error').hidden = false;
-  $('error').textContent = `加载失败：${error.message}。请通过 npm run dev 启动测试页。`;
-  $('status').textContent = '加载失败';
+  showLoadError(error);
   console.error(error);
 }
 
@@ -954,7 +1021,8 @@ function stepSimulation(delta){
           actor.quaternion.rotateTowards(desired,(currentName==='Run'?9:7)*delta);
           const facing=new THREE.Vector3(0,0,1).applyQuaternion(actor.quaternion).dot(difference);
           const gait=locomotion(currentName),remaining=gardenWalker.remainingDistance(actor.position);
-          const desiredSpeed=Math.min(gait.speed*state.rate,Math.sqrt(2*(gait.deceleration??6)*remaining))*Math.max(.2,(facing+1)/2);
+          const cruiseSpeed = gait.speed * state.rate * (currentName === 'Run' ? gardenRunSpeedMultiplier : 1);
+          const desiredSpeed=Math.min(cruiseSpeed,Math.sqrt(2*(gait.deceleration??6)*remaining))*Math.max(.2,(facing+1)/2);
           const before=motion.speed,change=(desiredSpeed>before?(gait.acceleration??7):(gait.deceleration??6))*delta;
           motion.speed=THREE.MathUtils.clamp(desiredSpeed,before-change,before+change);
           active.setEffectiveTimeScale(motion.speed/gait.speed);
@@ -1021,4 +1089,11 @@ renderer.setAnimationLoop((now) => {
     mudEffects.prepare(camera);
   }
   if(toon)toon.renderFrame(camera);else renderer.render(scene,camera);
+  if (state.loaded && !diagnostics.ready) {
+    diagnostics.ready = true;
+    if (resourceMode) {
+      advanceGardenLoading();
+      hideGardenLoading();
+    }
+  }
 });
