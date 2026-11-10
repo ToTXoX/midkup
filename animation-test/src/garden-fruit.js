@@ -37,7 +37,7 @@ export function createFruitModels(berry) {
   };
 }
 
-export function createGardenFruit({layout, environment, models, groundHeight}) {
+export function createGardenFruit({layout, environment, models, groundHeight, mobileGraphics=false}) {
   const fruitById = new Map();
   const trees = new Map();
   const star = new THREE.Shape();
@@ -47,7 +47,7 @@ export function createGardenFruit({layout, environment, models, groundHeight}) {
     star[i?'lineTo':'moveTo'](Math.cos(angle)*radius, Math.sin(angle)*radius);
   }
   const glintGeometry = new THREE.ShapeGeometry(star);
-  const pickupRingGeometry = new THREE.RingGeometry(.128,.163,48);
+  const pickupRingGeometry = new THREE.RingGeometry(mobileGraphics ? .18 : .128,mobileGraphics ? .23 : .163,48);
   let hoveredFruit = null;
   const planting = environment.getObjectByName('Planting');
   const plantingMeshes = [];
@@ -114,17 +114,22 @@ export function createGardenFruit({layout, environment, models, groundHeight}) {
     const {fruit:type,fruitScale:scale} = fruit.tree;
     return {id,type,name:fruitNames[type],center:fruitPoint(fruit).toArray(),scale};
   }
-  function nearbyGroundFruit(ray, maxDistance=Infinity, radius=.24) {
-    let closest = radius**2, match = null;
+  function nearbyFruit(ray, {maxDistance=Infinity, radiusPerMeter=0, isVisible}={}) {
+    let closest = Infinity, match = null;
     for(const fruit of fruitById.values()){
-      if(fruit.phase!=='ground')continue;
+      const onGround = fruit.phase==='ground';
+      if(!onGround && (!radiusPerMeter || fruit.phase!=='hanging'))continue;
       const point = fruitPoint(fruit);
       const distance = point.clone().sub(ray.origin).dot(ray.direction);
+      if(distance<=0 || distance>maxDistance)continue;
+      const radius = radiusPerMeter ? Math.min(.72,distance*radiusPerMeter) : .24;
       const offset = ray.distanceSqToPoint(point);
-      if(distance>=0&&distance<=maxDistance&&offset<closest){
-        closest = offset;
-        match = {fruit:groundFruit(fruit.id),point,distance};
-      }
+      const tapOffset = radiusPerMeter ? offset / distance**2 : offset;
+      if(offset>=radius**2 || tapOffset>=closest)continue;
+      const targetId = onGround ? null : fruit.tree.id;
+      if(isVisible && !isVisible(point,fruit.id,targetId))continue;
+      closest = tapOffset;
+      match = {fruit:onGround ? groundFruit(fruit.id) : null,targetId,point,distance};
     }
     return match;
   }
@@ -198,7 +203,7 @@ export function createGardenFruit({layout, environment, models, groundHeight}) {
     isHanging: id => fruitById.get(id)?.phase==='hanging',
     treeAt: id => fruitById.get(id)?.tree.id,
     point: id => fruitById.has(id) ? fruitPoint(fruitById.get(id)) : null,
-    groundFruit, nearbyGroundFruit, setHover,
+    groundFruit, nearbyFruit, setHover,
     take(id) {
       const fruit = fruitById.get(id);
       if(fruit?.phase!=='ground')return false;

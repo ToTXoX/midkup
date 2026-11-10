@@ -62,7 +62,12 @@ try {
       await page.mouse.move(p.x+10,p.y);
       assert.equal(await page.locator('#scene canvas').evaluate(el=>el.style.cursor),'pointer');
       await page.mouse.click(p.x+10,p.y);
-    }else await tapFruit(tree+'-2',6);
+    }else{
+      await moveTo(0,1.3);
+      const p=await projectPoint(hit.fruits.find(f=>f.id===tree+'-2').point);
+      // Tap just below the fruit, in the area of the nearby practice target's label.
+      await page.touchscreen.tap(p.x-12,p.y+6);
+    }
     assert.equal((await read()).meal.interaction?.fruitId,tree+'-2',await page.locator('#garden-feedback').textContent());
     await startBite();
     const bite = await read();

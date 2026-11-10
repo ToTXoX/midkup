@@ -118,7 +118,8 @@ function resetView() {
   if (garden) {
     const dock = $('garden-dock').getBoundingClientRect();
     const compact = dock.width > 0;
-    const sideInset = compact ? 12 : Math.min(48,innerWidth*.06);
+    const portrait = compact && innerHeight >= innerWidth;
+    const sideInset = portrait ? 8 : compact ? 12 : Math.min(48,innerWidth*.06);
     const desktopInset=THREE.MathUtils.lerp(72,36,THREE.MathUtils.smoothstep(innerHeight,650,1000));
     const verticalInset = Math.min(desktopInset, innerHeight * .13);
     let rightEdge = innerWidth - sideInset;
@@ -140,7 +141,7 @@ function resetView() {
     const frameY = topEdge + height / 2;
     const direction = new THREE.Vector3().fromArray(resourcePreview.layout.camera.position)
       .sub(new THREE.Vector3().fromArray(resourcePreview.layout.camera.target));
-    direction.y *= .73;
+    direction.y *= portrait ? 1.15 : .73;
     direction.normalize();
     const right=new THREE.Vector3().crossVectors(camera.up,direction).normalize(),up=new THREE.Vector3().crossVectors(direction,right);
     const box=resourcePreview.bounds,center=box.getCenter(new THREE.Vector3());
@@ -639,7 +640,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
   }
   if(down||e.buttons||e.pointerType!=='mouse'||resourcePreview?.view!=='garden')return;
   setPointerRay(e);
-  const candidate=resourcePreview.orchard.nearbyGroundFruit(raycaster.ray);
+  const candidate=resourcePreview.orchard.nearbyFruit(raycaster.ray);
   if(!candidate){setFruitHover();return;}
   const aimed=resourcePreview.pickAim(raycaster);
   const character=aimed?.fruit&&raycaster.intersectObject(model,true)[0];
@@ -655,17 +656,18 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const hits = raycaster.intersectObject(model, true);
   if(resourcePreview?.view==='garden'){
     if(groundSkillActive())return;
-    const aimed=resourcePreview.pickAim(raycaster,{touch:e.pointerType==='touch'});
+    // Convert a 16 CSS pixel tap radius to world units at the fruit's depth.
+    const radiusPerMeter = e.pointerType==='touch' ? 32 * halfFovTan(camera.fov) / renderer.domElement.clientHeight : 0;
+    const aimed=resourcePreview.pickAim(raycaster,{radiusPerMeter});
     if(characterInFront(hits[0],aimed)){requestGardenDance();return;}
     if(aimed?.fruit){goEatGardenFruit(aimed.fruit.id);return;}
     if(aimed?.basket){goEatGardenFruit();return;}
     if(aimed?.targetId){aimGardenTarget(aimed.point,aimed.targetId);return;}
+    if(state.movement && aimed)moveTo(aimed.point);
+    return;
   }
-  if (resourcePreview?.view!=='garden'&&hits.length) { pet(); return; }
+  if (hits.length) { pet(); return; }
   if (state.movement) {
-    if(resourcePreview?.view==='garden'){
-      const point=resourcePreview.pickDestination(raycaster);if(point)moveTo(point);return;
-    }
     const point = new THREE.Vector3();
     if (raycaster.ray.intersectPlane(groundPlane, point) && point.length() < 1.5) moveTo(point);
   }
@@ -985,7 +987,9 @@ try {
       key.shadow.camera.updateProjectionMatrix();key.position.set(garden?-6:-2.5,garden?12:4.5,garden?8:3);
       toon.setView(garden?'garden':'stage');
       $('resource-hint').textContent=garden?'点果树瞄准 · 用水枪打落果子。':'十二段动作 · 可以逐帧查看。';
-      $('view-hint').textContent=mobileGraphics?touchViewHint:garden?'点草地移动 · 拖动旋转':'拖动旋转 · 滚轮缩放';
+      $('view-hint').textContent=garden
+        ? (mobileGraphics?'点地移动 · 双指缩放':'点草地移动 · 拖动旋转')
+        : (mobileGraphics?touchViewHint:'拖动旋转 · 滚轮缩放');
       resetView();
     });
     const changeView=(view)=>{$('scene-view').value=view;$('scene-view').dispatchEvent(new Event('change'));};

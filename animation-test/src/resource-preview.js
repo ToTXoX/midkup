@@ -92,7 +92,7 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
       basket.add(item);
     });
   }
-  const orchard=createGardenFruit({layout:fruitLayout,environment,models,groundHeight});
+  const orchard=createGardenFruit({layout:fruitLayout,environment,models,groundHeight,mobileGraphics});
   let foodType='berry',food=berry.scene,foodCenter=foodRecords.get('berry').center,foodSize=foodRecords.get('berry').size;
   let foodScale=1;
   function selectFood(type,scale=1){
@@ -312,13 +312,28 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
     }
     return nearest?.point??null;
   }
-  function pickAim(ray,{touch=false}={}){
+  const fruitVisibilityRay = new THREE.Raycaster();
+  const fruitDirection = new THREE.Vector3();
+  function pickAim(ray,{radiusPerMeter=0}={}){
     const hit=ray.intersectObject(environment,true).find(isSceneHit);
-    if(!hit)return null;
-    if(groundMeshes.includes(hit.object)){
-      const nearby=orchard.nearbyGroundFruit(ray.ray,hit.distance+.10,touch ? .29 : .24);
+    const hitsGround = hit && groundMeshes.includes(hit.object);
+    if(radiusPerMeter && (!hit || hitsGround)){
+      const nearby=orchard.nearbyFruit(ray.ray,{
+        radiusPerMeter,
+        isVisible(point,id,treeId){
+          fruitDirection.subVectors(point,ray.ray.origin);
+          fruitVisibilityRay.far = fruitDirection.length() + .02;
+          fruitVisibilityRay.set(ray.ray.origin,fruitDirection.normalize());
+          const first = fruitVisibilityRay.intersectObjects([environment,model],true).find(isSceneHit)?.object.userData;
+          return first?.gardenFruit===id || (treeId && first?.fruitTree===treeId);
+        },
+      });
+      if(nearby)return nearby;
+    }else if(hitsGround){
+      const nearby=orchard.nearbyFruit(ray.ray,{maxDistance:hit.distance+.10});
       if(nearby)return nearby;
     }
+    if(!hit)return null;
     const {aimTarget,fruitTree,gardenFruit}=hit.object.userData;
     const fallen=orchard.groundFruit(gardenFruit);
     const hanging=orchard.isHanging(gardenFruit);
@@ -338,7 +353,7 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
     const front=characterFront(position,direction);
     return {visible:true,separation:rear-front,scale:food.scale.x,position:food.position.toArray()};
   }
-  return {layout,stats,bounds,fitPoints,extraColliders,groundHeight,hitGround,footprintSurface,meadow,windChime,pondWater,swimContacts,pickDestination:(ray)=>ray.intersectObject(environment,true).find(isSceneHit)?.point??null,
+  return {layout,stats,bounds,fitPoints,extraColliders,groundHeight,hitGround,footprintSurface,meadow,windChime,pondWater,swimContacts,
     pickAim,targetPoint,tackleTargetContact,traceMud,targetFeedback,foodContact,basketInfo,beginGardenMeal,orchard,get foodType(){return foodType;},traceWater:(origin,forward)=>resolveImpact(origin,forward.clone().multiplyScalar(WATER_SPEED),WATER_GRAVITY),
     setView,get view(){return view;},update,onActionChange,debug:()=>({view,pond:pondWater.debug(),mouth:position.toArray(),direction:direction.toArray(),food:food.visible,eating:{phase:eatPhase,crumbs:foodFX.visible?crumbs.filter(o=>o.visible).length:0,hearts:foodFX.visible?happyHearts.filter(o=>o.visible).length:0},orb:false,water:water.debug().stream,waterEffect:water.debug()}),environment};
 }
