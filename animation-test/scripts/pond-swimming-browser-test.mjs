@@ -90,17 +90,23 @@ try{
   await page.evaluate(()=>__mudkipTest.pause(true));await page.screenshot({path:'../renders/pond-v13-mobile.png'});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth===innerWidth));
   pass('Stage exposes both portable swim clips; scene cleanup and phone touch entry work');
-  const phone=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true,isMobile:true});
+  const phone=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:3,hasTouch:true,isMobile:true});
   phone.on('pageerror',e=>errors.push(e.message));
   await phone.goto('http://127.0.0.1:5173/resources.html?scene=garden',{waitUntil:'networkidle'});
   await phone.waitForFunction(()=>window.__mudkipTest?.diagnostics.ready);
-  assert.equal(await phone.evaluate(()=>__mudkipTest.resources().pond.simulation.size),64);
+  const phoneGraphics=await phone.evaluate(()=>{
+    const canvas=document.querySelector('#scene canvas'),pond=__mudkipTest.resources().pond;
+    return {width:canvas.width,grid:pond.simulation.size,refraction:pond.refractionSize};
+  });
+  assert.equal(phoneGraphics.width,Math.floor(390*1.25));
+  assert.equal(phoneGraphics.grid,48);
+  assert(Math.max(...phoneGraphics.refraction)<=384);
   const phonePoint=await phone.evaluate(()=>__mudkipTest.project(3.53,-.039,.316));await phone.touchscreen.tap(phonePoint.x,phonePoint.y);
   await phone.evaluate(()=>{__mudkipTest.advanceMovement(6);__mudkipTest.pause(true);});
   assert.equal(await phone.evaluate(()=>__mudkipTest.swimming().phase),'swimming');
   assert(await phone.evaluate(()=>__mudkipTest.waves().peak<.012));
   await phone.screenshot({path:'../renders/pond-v13-mobile.png'});await phone.close();
-  pass('A fresh phone viewport selects the smaller 64-square simulation and supports native touch entry');
+  pass('High-DPI phones use a smaller drawing buffer and pond simulation while supporting native touch entry');
   assert.deepEqual(errors,[]);
   await fs.writeFile('../docs/pond-swimming-v14.2-tests.json',JSON.stringify({timestamp:new Date().toISOString(),browser:await browser.version(),checks,errors},null,2));
 }finally{await browser.close();}

@@ -95,6 +95,32 @@ try{
   const gardenAfter=await page.evaluate(()=>window.__mudkipTest.camera().position);
   assert(Math.hypot(...gardenAfter.map((v,i)=>v-gardenBefore[i]))>.05);
   checks.push({name:'Native phone touch also rotates the garden'});
+  await page.getByRole('button',{name:'恢复全景'}).tap();
+  await page.waitForFunction(before=>{
+    const {position}=window.__mudkipTest.camera();
+    return Math.hypot(...position.map((value,i)=>value-before[i]))<.01;
+  },gardenBefore);
+  checks.push({name:'The phone full-view button resets the camera immediately after a drag'});
+
+  const phone=await browser.newPage({viewport:{width:402,height:686},isMobile:true,hasTouch:true});
+  phone.on('pageerror',error=>errors.push(error.message));
+  await phone.goto('http://127.0.0.1:5173/resources.html?scene=garden');
+  await phone.waitForFunction(()=>window.__mudkipTest?.diagnostics.ready);
+  const phoneSession=await phone.context().newCDPSession(phone);
+  const notice=phone.getByRole('status').filter({hasText:'双指捏合，恢复网页原比例'});
+  await phoneSession.send('Emulation.setPageScaleFactor',{pageScaleFactor:1.7});
+  await notice.waitFor({state:'visible'});
+  const pinch=(type,points)=>phoneSession.send('Input.dispatchTouchEvent',{
+    type,touchPoints:points.map(([x,y],i)=>({x,y,id:i+1})),
+  });
+  await pinch('touchStart',[[50,220],[350,220]]);
+  for(let i=1;i<=15;i++)await pinch('touchMove',[[50+i*6,220],[350-i*6,220]]);
+  await pinch('touchEnd',[]);
+  await notice.waitFor({state:'hidden'});
+  assert.equal(await phone.evaluate(()=>visualViewport.scale),1);
+  assert.equal(await phone.locator('#app').evaluate(el=>getComputedStyle(el).touchAction),'none');
+  await phone.close();
+  checks.push({name:'An already zoomed phone can pinch back to the original page scale'});
   assert.deepEqual(errors,[]);
   await fs.writeFile(new URL('../../docs/camera-input-tests.json',import.meta.url),JSON.stringify({passed:true,checks,errors},null,2));
   console.log(JSON.stringify({checks,errors},null,2));

@@ -4,7 +4,7 @@ import {createCartoonSplash} from './cartoon-splash.js';
 import {createPondLily} from './pond-lily.js';
 
 // A shallow, refractive pond with sparse cartoon crests over the heightfield.
-export async function createPondWater({environment,collider,renderer,scene,atlasURL,groundHeight}){
+export async function createPondWater({environment,collider,renderer,scene,atlasURL,groundHeight,mobileGraphics=false}){
   const root=environment.getObjectByName('Pond_Water');
   if(!root||!collider)throw new Error('庭院缺少水池表面或边界');
   const box=new THREE.Box3().setFromObject(root),center=box.getCenter(new THREE.Vector3());
@@ -27,7 +27,8 @@ export async function createPondWater({environment,collider,renderer,scene,atlas
     const kept=[];for(let i=0;i<indices.length;i+=3)if(!removed.has(find(indices[i])))kept.push(indices[i],indices[i+1],indices[i+2]);
     g.setIndex(kept);mesh.geometry=g;
   });
-  const simulation=createPondSimulation(renderer,{...info,size:innerWidth<700?64:96});
+  const gridSize = mobileGraphics ? 48 : innerWidth < 700 ? 64 : 96;
+  const simulation=createPondSimulation(renderer,{...info,size:gridSize});
   const splashFX=await createCartoonSplash(atlasURL,{surfaceHeight:info.height});
   environment.add(splashFX.group);
   const ripples=Array.from({length:3},()=>new THREE.Vector4(0,0,-100,0));
@@ -97,7 +98,9 @@ export async function createPondWater({environment,collider,renderer,scene,atlas
       }`});
   material.userData.outlineParameters={visible:false};
   // Subdivide the original flat fan so simulated height changes move the surface.
-  const positions=[],indices=[],rings=40,segments=112;
+  const positions=[],indices=[];
+  const rings = mobileGraphics ? 24 : 40;
+  const segments = mobileGraphics ? 72 : 112;
   for(let i=0;i<=rings;i++)for(let j=0;j<segments;j++){const r=i/rings,a=j/segments*Math.PI*2;positions.push(info.center[0]+r*info.radii[0]*Math.cos(a),info.height,info.center[1]+r*info.radii[1]*Math.sin(a));}
   for(let i=0;i<rings;i++)for(let j=0;j<segments;j++){const a=i*segments+j,b=i*segments+(j+1)%segments,c=a+segments,d=b+segments;indices.push(a,b,c,b,d,c);}
   const surfaceGeometry=new THREE.BufferGeometry();surfaceGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));surfaceGeometry.setIndex(indices);surfaceGeometry.computeVertexNormals();
@@ -134,7 +137,10 @@ export async function createPondWater({environment,collider,renderer,scene,atlas
   const drawingBuffer=new THREE.Vector2();
   function prepare(camera){
     renderer.getDrawingBufferSize(drawingBuffer);uniforms.uResolution.value.copy(drawingBuffer);
-    const scale=Math.min(.65,960/drawingBuffer.x),w=Math.max(1,Math.round(drawingBuffer.x*scale)),h=Math.max(1,Math.round(drawingBuffer.y*scale));
+    const scale = mobileGraphics
+      ? Math.min(.4, 384 / Math.max(drawingBuffer.x, drawingBuffer.y))
+      : Math.min(.65, 960 / drawingBuffer.x);
+    const w=Math.max(1,Math.round(drawingBuffer.x*scale)),h=Math.max(1,Math.round(drawingBuffer.y*scale));
     if(refraction.width!==w||refraction.height!==h)refraction.setSize(w,h);
     uniforms.uNear.value=camera.near;uniforms.uFar.value=camera.far;
     const target=renderer.getRenderTarget(),shadowAuto=renderer.shadowMap.autoUpdate,shadowEnabled=renderer.shadowMap.enabled;

@@ -21,6 +21,13 @@
   font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
 }
 .resource.garden-active #app { min-height: 0; touch-action: none; }
+.resource.garden-active #app[data-page-zoomed] { touch-action: auto; }
+.resource.garden-active #app[data-page-zoomed] :is(canvas, button) { pointer-events: none; }
+.garden-zoom-notice {
+  position: fixed; z-index: 13; top: 0; left: 0; margin: 0; padding: 8px 12px;
+  border: 1.5px solid var(--ui-ink); border-radius: 12px; background: var(--ui-paper);
+  font-size: 13px; font-weight: 700; white-space: nowrap; pointer-events: none; transform-origin: top left;
+}
 .ui-symbols { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
 .resource #garden-basket { width: 40px; height: 40px; cursor: pointer; }
 .resource #garden-basket:after { content: ''; position: absolute; left: 22px; top: 4px; width: 14px; height: 14px; pointer-events: none; background: #fffbe6; clip-path: polygon(50% 0,63% 38%,100% 50%,63% 62%,50% 100%,38% 62%,0 50%,38% 38%); opacity: 0; animation: basket-glint 4s linear infinite; }
@@ -235,10 +242,12 @@
 .gait-switch[aria-checked=false] .gait-track>span:last-child, .gait-switch[aria-checked=true] .gait-track>span:first-child { color: #849698; }
 @media(prefers-reduced-motion:reduce) { .gait-track:before { transition: none; } }
 .garden-menu { position: absolute; left: max(7px,env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 7px; z-index: 8; }
-.resource .garden-menu-toggle { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 34px; height: 56px; padding: 4px; border: 1.5px solid var(--ui-ink); border-radius: 7px 13px 13px 7px; background: var(--ui-paper); color: var(--ui-ink); box-shadow: 2px 3px 0 #4b6a7c44; }
-.garden-menu-toggle svg { width: 20px; height: 20px; transition: transform .15s; }
+.resource :is(.garden-menu-toggle,.garden-recenter) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 34px; height: 56px; padding: 4px; border: 1.5px solid var(--ui-ink); border-radius: 7px 13px 13px 7px; background: var(--ui-paper); color: var(--ui-ink); box-shadow: 2px 3px 0 #4b6a7c44; }
+.resource .garden-recenter { display: none; }
+:is(.garden-menu-toggle,.garden-recenter) svg { width: 20px; height: 20px; }
+.garden-menu-toggle svg { transition: transform .15s; }
 .garden-menu-toggle[aria-expanded=true] svg { transform: rotate(180deg); }
-.garden-menu-toggle span { font-size: 8px; line-height: 11px; font-weight: 600; }
+:is(.garden-menu-toggle,.garden-recenter) span { font-size: 8px; line-height: 11px; font-weight: 600; }
 .resource .garden-menu-panel { width: 64px; grid-template-columns: 1fr; gap: 6px; margin: 0; padding: 7px; border: 1.5px solid var(--ui-ink); border-radius: 10px 14px 10px 14px; background: var(--ui-paper); box-shadow: 3px 4px 0 #4b6a7c44; }
 .resource .garden-menu-panel button { height: 48px; min-height: 48px; padding: 4px 2px; }
 .resource .garden-menu-panel svg { width: 21px; height: 21px; }
@@ -272,8 +281,9 @@
   .resource .garden-music-toggle { top: var(--garden-top); right: var(--garden-right); width: 44px; height: 44px; }
   .resource.garden-active .view-hint { top: calc(var(--garden-top) + 57px); right: var(--garden-right); font-size: 9px; }
   .resource .garden-menu { top: calc(var(--garden-top) + 50px); left: var(--garden-left); align-items: flex-start; transform: none; }
-  .resource .garden-menu-toggle { width: 44px; height: 44px; }
-  .resource .garden-menu-panel { width: auto; grid-template-columns: repeat(4, 44px); gap: 4px; padding: 5px; }
+  .resource :is(.garden-menu-toggle,.garden-recenter) { width: 44px; height: 44px; }
+  .resource .garden-recenter { display: flex; }
+  .resource .garden-menu-panel { position: absolute; top: calc(100% + 7px); left: 0; width: auto; grid-template-columns: repeat(4, 44px); gap: 4px; padding: 5px; }
   .resource .garden-menu-panel button { height: 44px; min-height: 44px; }
 
   .garden-dock {

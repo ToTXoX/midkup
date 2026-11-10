@@ -26,7 +26,7 @@ export async function loadResourcePreviewAssets(root, track) {
   return { layout, fruitLayout, garden, berry, targets };
 }
 
-export async function createResourcePreview({renderer,scene,actor,model,root,assets,metadata,stageColliders,toon,heartTexture,onWaterContact=()=>{}}) {
+export async function createResourcePreview({renderer,scene,actor,model,root,assets,metadata,stageColliders,toon,heartTexture,mobileGraphics,onWaterContact=()=>{}}) {
   const { layout, fruitLayout, garden, berry, targets } = assets;
   const environment=new THREE.Group();
   environment.name='Garden Resources';
@@ -138,7 +138,7 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
     scene.add(object);
     toon?.apply(object,'prop');
   }
-  const pondWater=await createPondWater({environment,collider:layout.colliders.find(c=>c.id==='pond'),renderer,scene,groundHeight,atlasURL:root+'fx/textures/cartoon-splash-v14.png'});
+  const pondWater=await createPondWater({environment,collider:layout.colliders.find(c=>c.id==='pond'),renderer,scene,groundHeight,mobileGraphics,atlasURL:root+'fx/textures/cartoon-splash-v14.png'});
   const contactBones=['Hips','Head','LHand','RHand','LFoot','RFoot'].map(name=>model.getObjectByName(name));
   const contactPoints=contactBones.map(()=>new THREE.Vector3());
   function swimContacts(){

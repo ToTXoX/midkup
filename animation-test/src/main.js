@@ -17,6 +17,7 @@ import { createGardenSwimming } from './garden-swimming.js';
 import { createGardenFootprints } from './garden-footprints.js';
 import { preventGameSelection } from './game-selection.js';
 import { createEyeExpressions } from './eye-expressions.js';
+import { setupGardenViewport } from './garden-viewport.js';
 
 preventGameSelection(document.getElementById('app'));
 
@@ -24,6 +25,8 @@ const $ = (id) => document.getElementById(id);
 const resourceMode = document.body.dataset.pack === 'game';
 const resourceRoot = `${import.meta.env.BASE_URL}assets/game/`;
 const gardenLoading = $('garden-loading');
+const mobileGraphics = matchMedia('(pointer: coarse)').matches;
+const syncGardenViewport = resourceMode ? setupGardenViewport($('app'), $('garden-zoom-notice')) : null;
 function advanceGardenLoading() {
   const progress = $('garden-load-progress');
   progress.value += 1;
@@ -66,12 +69,12 @@ scene.background = new THREE.Color('#e6eee6');
 scene.fog = new THREE.Fog('#e6eee6', 5, 12);
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer = new THREE.WebGLRenderer({ antialias: !mobileGraphics, alpha: false });
 } catch (error) {
   showLoadError(error);
   throw error;
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, mobileGraphics ? 1.25 : 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
@@ -88,6 +91,7 @@ const halfFovTan=fov=>Math.tan(THREE.MathUtils.degToRad(fov/2));
 const lensDistanceScale=()=>halfFovTan(STAGE_FOV)/halfFovTan(camera.fov);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.dampingFactor = mobileGraphics ? .1 : .05;
 controls.enablePan = false;
 controls.touches.TWO = null;
 controls.minDistance = 1.9;
@@ -97,6 +101,9 @@ controls.maxPolarAngle = Math.PI / 2 - .04;
 function resetView() {
   skillInput?.cancel();
   controls.enabled=true;
+  controls.enableDamping = false;
+  controls.update();
+  controls.enableDamping = true;
   const garden=resourcePreview?.view==='garden';
   camera.fov=garden?(resourcePreview.layout.camera.fov??STAGE_FOV):STAGE_FOV;
   camera.near=.05;
@@ -222,7 +229,8 @@ const key = new THREE.DirectionalLight('#fff1d9', 3.1);
 key.position.set(-2.5, 4.5, 3);
 key.castShadow = true;
 Object.assign(key.shadow.camera, { left: -2.3, right: 2.3, top: 2.3, bottom: -2.3, near: .1, far: 10 });
-key.shadow.mapSize.set(2048, 2048);
+const shadowSize = mobileGraphics ? 1024 : 2048;
+key.shadow.mapSize.set(shadowSize, shadowSize);
 key.shadow.normalBias = .012;
 key.shadow.bias = -.00015;
 key.shadow.radius = 3;
@@ -314,7 +322,11 @@ function stopTravel({arrived=false}={}) {
   if(arrived)destinationMarker?.arrive();else destinationMarker?.hide();
   destination.visible = false;
 }
-function gardenFeedback(message){if($('garden-feedback'))$('garden-feedback').textContent=message;}
+function setHudText(id, text) {
+  const element = $(id);
+  if (element && element.textContent !== text) element.textContent = text;
+}
+function gardenFeedback(message){setHudText('garden-feedback',message);}
 function isGardenDancePlaying(){return resourcePreview?.view==='garden'&&gardenDances.includes(currentName);}
 function cancelGardenDanceRequest(){pendingGardenDance=null;}
 function chooseGardenDance(){
@@ -700,14 +712,14 @@ function updateCombatUI(){
   $('garden-mud').setAttribute('aria-busy',String(!mud?.ready));
   $('garden-fire').dataset.busy=String(busy);$('garden-fire').dataset.aiming=String(gesture.active);
   $('garden-fire').setAttribute('aria-busy',String(busy));
-  $('skill-title').textContent=info.phase==='turning'?'转身':info.phase==='shooting'?(active.time<.33?'蓄水':active.time<.66?'喷水':'恢复'):'水枪';
-  $('skill-caption').textContent=state.paused?'已暂停':swimming?.busy?(swimming.debug().phase==='entering'?'正在入水…':'正在上岸…'):gesture.active?'松手喷水':busy?'准备下一发…':'点按喷水 · 拖动瞄准';
+  setHudText('skill-title',info.phase==='turning'?'转身':info.phase==='shooting'?(active.time<.33?'蓄水':active.time<.66?'喷水':'恢复'):'水枪');
+  setHudText('skill-caption',state.paused?'已暂停':swimming?.busy?(swimming.debug().phase==='entering'?'正在入水…':'正在上岸…'):gesture.active?'松手喷水':busy?'准备下一发…':'点按喷水 · 拖动瞄准');
   const length=Math.hypot(...gesture.offset),scale=length>0?Math.min(length,22)/length:0;
   $('skill-thumb').style.transform=`translate(${gesture.offset[0]*scale}px,${gesture.offset[1]*scale}px)`;
   $('skill-stick').hidden=!gesture.active;
   $('garden-fire').style.setProperty('--cooldown',`${busy&&info.phase==='shooting'?Math.min(1,active.time)*360:360}deg`);
   if(info.phase==='shooting'&&!info.lastContact)gardenFeedback(active.time<.33?'闭嘴蓄水…':active.time<.66?'水枪发射！':'水流正在飞向目标…');
-  $('garden-hit-count').textContent=String(resourcePreview.targetFeedback.debug().total).padStart(2,'0');
+  setHudText('garden-hit-count',String(resourcePreview.targetFeedback.debug().total).padStart(2,'0'));
   $('aim-reticle').hidden=!garden||!info.point||groundBusy;
   if(garden&&info.point&&!groundBusy){
     const p=new THREE.Vector3().fromArray(info.point).project(camera),visible=p.z<1&&p.z>-1&&Math.abs(p.x)<1&&Math.abs(p.y)<1;
@@ -716,7 +728,7 @@ function updateCombatUI(){
     const ready=info.assessment?.reachable&&info.assessment?.clear;
     $('aim-reticle').dataset.ready=String(ready);$('aim-reticle').dataset.firing=String(busy);
     const status=gesture.active?'松手喷水':info.assessment?.blocked?'被遮挡':!info.assessment?.reachable?'距离太远':info.targetId?'可命中':'已瞄准';
-    $('aim-label').textContent=`${info.targetName} · ${status}`;
+    setHudText('aim-label',`${info.targetName} · ${status}`);
   }
   const hit=resourcePreview.targetFeedback.debug();
   const recent=hit.targets.filter(t=>t.hits&&t.age<.75).sort((a,b)=>a.age-b.age)[0];
@@ -846,7 +858,7 @@ try {
     if(danced)gardenFeedback('跳完啦，点我再跳一支～');
   });
   if(resourceMode){
-    resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,assets:previewAssets,metadata,stageColliders:[stage,floor],toon,heartTexture,onWaterContact:event=>combat?.contact(event)});
+    resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,assets:previewAssets,metadata,stageColliders:[stage,floor],toon,heartTexture,mobileGraphics,onWaterContact:event=>combat?.contact(event)});
     footprints=createGardenFootprints({scene,actor,model,clips:metadata.clips,
       sampleSurface:resourcePreview.footprintSurface,isWater:point=>swimming?.contains(point)});
     combat=createGardenCombat({actor,model,preview:resourcePreview,
@@ -932,6 +944,7 @@ try {
       if(garden)state.waterRate=1;
       combat.setMode('move');combat.cancel();
       document.body.classList.toggle('garden-active',garden);
+      syncGardenViewport();
       resourcePreview.setView(event.target.value);
       waterFramed=false;
       stopTravel();clearHearts();playClip('Idle',{immediate:true});
@@ -956,7 +969,23 @@ try {
     $('garden-menu-toggle').addEventListener('click',()=>setGardenMenu($('garden-menu-toggle').getAttribute('aria-expanded')!=='true'));
     $('garden-reset').addEventListener('click',()=>{resetActor();state.paused=false;updatePauseUI();playClip('Idle');});
     $('garden-camera').addEventListener('click',resetView);
-    $('garden-pause').addEventListener('click',()=>{state.paused=!state.paused;updatePauseUI();});
+    const recenter = $('garden-recenter');
+    const restoreFullView = () => {
+      setGardenMenu(false);
+      resetView();
+    };
+    recenter.addEventListener('click', restoreFullView);
+    recenter.addEventListener('touchend', event => {
+      const touch = event.changedTouches[0];
+      if (event.touches.length || !touch || !recenter.contains(document.elementFromPoint(touch.clientX, touch.clientY))) return;
+      event.preventDefault();
+      restoreFullView();
+    }, { passive: false });
+    $('garden-pause').addEventListener('click',()=>{
+      state.paused=!state.paused;
+      updatePauseUI();
+      updateCombatUI();
+    });
     $('garden-gait').addEventListener('click',()=>setGait(state.travelGait==='Run'?'Walk':'Run'));
     document.querySelectorAll('[data-aim-target]').forEach(b=>b.addEventListener('click',()=>{aimGardenTarget(resourcePreview.targetPoint(b.dataset.aimTarget),b.dataset.aimTarget);renderer.domElement.focus({preventScroll:true});}));
     $('garden-basket').addEventListener('click',()=>{goEatGardenFruit();renderer.domElement.focus({preventScroll:true});});
@@ -1093,6 +1122,7 @@ function stepSimulation(delta){
   if(resourcePreview?.view==='garden')resourcePreview.pondWater.update(state.paused?0:delta,{contacts:resourcePreview.swimContacts(),position:actor.position,yaw:actor.rotation.y,inWater:swimming?.inWater,moving:swimming?.moving});
 }
 renderer.setAnimationLoop((now) => {
+  if (mobileGraphics && previousTime !== undefined && now - previousTime < 1000 / 30 - 1) return;
   const delta = previousTime === undefined ? 0 : Math.min((now-previousTime)/1000, .05);
   previousTime = now;
   stepSimulation(delta);
