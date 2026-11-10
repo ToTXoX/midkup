@@ -112,6 +112,11 @@ export async function createPondWater({environment,collider,renderer,scene,atlas
   // One-off entry/exit splashes; ordinary swimming only emits surface ripples.
   const drops=splashFX.group;
   let time=0,lastInWater=false,rippleIndex=0,lastRipple=-100,travel=0,hadPosition=false;
+  let wavesActive = !mobileGraphics;
+  let lastRefractionAt = -Infinity;
+  const lastCameraPosition = new THREE.Vector3();
+  const lastCameraRotation = new THREE.Quaternion();
+  const lastProjection = new THREE.Matrix4();
   const previousPosition=new THREE.Vector3(),emission=new THREE.Vector3(),forward=new THREE.Vector3();
   function surfaceRipple(point,yaw=0){ripples[rippleIndex++%ripples.length].set(point.x,point.z,time,yaw);lastRipple=time;}
   function ripple(point,strength=.4){simulation.drop(point,.002*strength,.15);surfaceRipple(point);}
@@ -119,7 +124,11 @@ export async function createPondWater({environment,collider,renderer,scene,atlas
   function update(delta,{contacts,position,yaw=0,inWater=false,moving=false}={}){
     time+=delta;uniforms.uTime.value=time;
     lily?.update(delta,position,inWater);
-    simulation.update(delta,inWater?contacts:null);uniforms.uState.value=simulation.texture;
+    const simulateWaves = !mobileGraphics || inWater || time - lastRipple < 4;
+    if (simulateWaves) simulation.update(delta, inWater ? contacts : null);
+    else if (wavesActive) simulation.reset();
+    wavesActive = simulateWaves;
+    uniforms.uState.value=simulation.texture;
     splashFX.update(delta);
     if(delta>0&&position&&inWater&&moving){
       const distance=hadPosition?Math.hypot(position.x-previousPosition.x,position.z-previousPosition.z):0;
@@ -133,15 +142,30 @@ export async function createPondWater({environment,collider,renderer,scene,atlas
     if(!inWater&&lastInWater)splashFX.reset();
     lastInWater=inWater;
   }
-  function reset(){simulation.reset();uniforms.uState.value=simulation.texture;splashFX.reset();lily?.reset();ripples.forEach(r=>r.z=-100);rippleIndex=0;lastRipple=-100;travel=0;hadPosition=false;lastInWater=false;}
+  function reset(){
+    simulation.reset();
+    uniforms.uState.value=simulation.texture;
+    splashFX.reset();
+    lily?.reset();
+    ripples.forEach(r=>r.z=-100);
+    rippleIndex=0;lastRipple=-100;travel=0;hadPosition=false;lastInWater=false;
+    wavesActive = !mobileGraphics;
+    lastRefractionAt = -Infinity;
+  }
   const drawingBuffer=new THREE.Vector2();
-  function prepare(camera){
+  function prepare(camera, now = performance.now()){
     renderer.getDrawingBufferSize(drawingBuffer);uniforms.uResolution.value.copy(drawingBuffer);
     const scale = mobileGraphics
       ? Math.min(.4, 384 / Math.max(drawingBuffer.x, drawingBuffer.y))
       : Math.min(.65, 960 / drawingBuffer.x);
     const w=Math.max(1,Math.round(drawingBuffer.x*scale)),h=Math.max(1,Math.round(drawingBuffer.y*scale));
-    if(refraction.width!==w||refraction.height!==h)refraction.setSize(w,h);
+    const resized = refraction.width !== w || refraction.height !== h;
+    if (resized) refraction.setSize(w,h);
+    // A still camera can reuse the pond image between refreshes on a phone.
+    if (mobileGraphics && !lastInWater && !resized && now - lastRefractionAt < 100 &&
+        lastCameraPosition.distanceToSquared(camera.position) < 1e-8 &&
+        Math.abs(lastCameraRotation.dot(camera.quaternion)) > 1 - 1e-9 &&
+        lastProjection.equals(camera.projectionMatrix)) return;
     uniforms.uNear.value=camera.near;uniforms.uFar.value=camera.far;
     const target=renderer.getRenderTarget(),shadowAuto=renderer.shadowMap.autoUpdate,shadowEnabled=renderer.shadowMap.enabled;
     root.visible=false;drops.visible=false;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.enabled=false;
@@ -150,6 +174,12 @@ export async function createPondWater({environment,collider,renderer,scene,atlas
     try{
       renderer.setRenderTarget(refraction);
       renderer.render(scene,camera);
+      if (mobileGraphics) {
+        lastRefractionAt = now;
+        lastCameraPosition.copy(camera.position);
+        lastCameraRotation.copy(camera.quaternion);
+        lastProjection.copy(camera.projectionMatrix);
+      }
     }finally{
       renderer.setRenderTarget(target);
       renderer.shadowMap.autoUpdate=shadowAuto;renderer.shadowMap.enabled=shadowEnabled;

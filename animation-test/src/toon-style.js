@@ -13,10 +13,12 @@ vec3 getGradientIrradiance(vec3 normal,vec3 lightDirection){
   return mix(color,sunlight,smoothstep(0.48-aa,0.48+aa,light));
 }`;
 
-export function createToonStyle({renderer,scene,ambient,key,fill}){
+export function createToonStyle({renderer,scene,ambient,key,fill,mobileGraphics=false}){
   const ink=new THREE.Color('#294653').toArray();
   const forestInk=new THREE.Color('#49644e').toArray();
-  const effect=new OutlineEffect(renderer,{defaultThickness:.0018,defaultColor:ink,defaultKeepAlive:true});
+  const outlineScale = mobileGraphics ? 1.5 : 1;
+  const characterOutline = .0018 * outlineScale;
+  const effect=new OutlineEffect(renderer,{defaultThickness:characterOutline,defaultColor:ink,defaultKeepAlive:true});
   const cache=new Map();
   let materials=0,outlinedMaterials=0;
   renderer.toneMapping=THREE.NoToneMapping;
@@ -39,7 +41,8 @@ export function createToonStyle({renderer,scene,ambient,key,fill}){
     }
     const ground=/terrain|earth warm|grass|water|ripple|glass|reflection|flower/i.test(source.name);
     const outlined=role!=='stage'&&!ground&&!eye;
-    material.userData.outlineParameters={visible:outlined,thickness:role==='character'?.0018:/foliage|forest|pine/i.test(source.name)?.0010:.00065,color:role==='character'?ink:forestInk,keepAlive:true};
+    const sceneryOutline = /foliage|forest|pine/i.test(source.name) ? .001 : .00065;
+    material.userData.outlineParameters={visible:outlined,thickness:role==='character'?characterOutline:sceneryOutline*outlineScale,color:role==='character'?ink:forestInk,keepAlive:true};
     cache.set(cacheKey,material);materials++;if(outlined)outlinedMaterials++;
     return material;
   }
@@ -68,5 +71,5 @@ export function createToonStyle({renderer,scene,ambient,key,fill}){
   setView('stage');
   return {apply,excludeUnstyled,setView,
     renderFrame:(camera)=>effect.render(scene,camera),
-    debug:()=>({name:'anime-cel-v06',bands:3,materials,outlinedMaterials,characterOutline:.0018,physicalSpecular:false})};
+    debug:()=>({name:'anime-cel-v06',bands:3,materials,outlinedMaterials,characterOutline,physicalSpecular:false})};
 }

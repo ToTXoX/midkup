@@ -69,7 +69,7 @@ scene.background = new THREE.Color('#e6eee6');
 scene.fog = new THREE.Fog('#e6eee6', 5, 12);
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: !mobileGraphics, alpha: false });
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 } catch (error) {
   showLoadError(error);
   throw error;
@@ -238,7 +238,7 @@ scene.add(key);
 const fill = new THREE.DirectionalLight('#e1efff', 1.1);
 fill.position.set(3, 2, -2);
 scene.add(fill);
-const toon=resourceMode?createToonStyle({renderer,scene,ambient,key,fill}):null;
+const toon=resourceMode?createToonStyle({renderer,scene,ambient,key,fill,mobileGraphics}):null;
 
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#d5dfca', roughness: 1 }));
 floor.rotation.x = -Math.PI / 2;
@@ -1132,7 +1132,7 @@ renderer.setAnimationLoop((now) => {
   updateCombatUI();
   destinationMarker?.update(state.paused?0:delta,camera,innerHeight);
   if(resourcePreview?.view==='garden'){
-    resourcePreview.pondWater.prepare(camera);
+    resourcePreview.pondWater.prepare(camera, now);
     tackleEffects.prepare(camera);
     mudEffects.prepare(camera);
   }

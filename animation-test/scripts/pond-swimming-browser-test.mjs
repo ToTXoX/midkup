@@ -96,11 +96,18 @@ try{
   await phone.waitForFunction(()=>window.__mudkipTest?.diagnostics.ready);
   const phoneGraphics=await phone.evaluate(()=>{
     const canvas=document.querySelector('#scene canvas'),pond=__mudkipTest.resources().pond;
-    return {width:canvas.width,grid:pond.simulation.size,refraction:pond.refractionSize};
+    return {width:canvas.width,antialias:canvas.getContext('webgl2').getContextAttributes().antialias,
+      outline:__mudkipTest.style().characterOutline,grid:pond.simulation.size,refraction:pond.refractionSize};
   });
   assert.equal(phoneGraphics.width,Math.floor(390*1.25));
+  assert.equal(phoneGraphics.antialias,true);
+  assert(Math.abs(phoneGraphics.outline-.0027)<1e-6);
   assert.equal(phoneGraphics.grid,48);
   assert(Math.max(...phoneGraphics.refraction)<=384);
+  const stillPond=await phone.evaluate(()=>__mudkipTest.resources().pond);
+  await phone.waitForFunction(time=>__mudkipTest.resources().pond.time>=time+.2,stillPond.time);
+  assert.equal(await phone.evaluate(()=>__mudkipTest.resources().pond.simulation.steps),stillPond.simulation.steps);
+  pass('Mobile outlines are antialiased while a calm pond skips wave simulation');
   const phonePoint=await phone.evaluate(()=>__mudkipTest.project(3.53,-.039,.316));await phone.touchscreen.tap(phonePoint.x,phonePoint.y);
   await phone.evaluate(()=>{__mudkipTest.advanceMovement(6);__mudkipTest.pause(true);});
   assert.equal(await phone.evaluate(()=>__mudkipTest.swimming().phase),'swimming');
