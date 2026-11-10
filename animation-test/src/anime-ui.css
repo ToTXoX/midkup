@@ -20,7 +20,7 @@
   color: var(--ui-ink);
   font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
 }
-.resource.garden-active #app { min-height: 0; }
+.resource.garden-active #app { min-height: 0; touch-action: none; }
 .ui-symbols { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
 .resource #garden-basket { width: 40px; height: 40px; cursor: pointer; }
 .resource #garden-basket:after { content: ''; position: absolute; left: 22px; top: 4px; width: 14px; height: 14px; pointer-events: none; background: #fffbe6; clip-path: polygon(50% 0,63% 38%,100% 50%,63% 62%,50% 100%,38% 62%,0 50%,38% 38%); opacity: 0; animation: basket-glint 4s linear infinite; }

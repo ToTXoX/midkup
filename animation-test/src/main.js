@@ -89,6 +89,7 @@ const lensDistanceScale=()=>halfFovTan(STAGE_FOV)/halfFovTan(camera.fov);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enablePan = false;
+controls.touches.TWO = null;
 controls.minDistance = 1.9;
 controls.maxDistance = 6;
 controls.minPolarAngle = .25;
