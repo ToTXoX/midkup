@@ -110,6 +110,11 @@
 .resource .mud-button[data-busy=true]:after { background: linear-gradient(145deg,#ad8c73 0 52%,#8f715d 52%); }
 .resource .mud-button .skill-thumb svg { width: 25px; height: 24px; filter: drop-shadow(0 1px 0 #704d35); }
 .resource .mud-button .skill-thumb strong { line-height: 17px; text-shadow: 0 1px #704d35; }
+.resource .dance-button { position: absolute; right: calc(100% - 10px); bottom: 117px; width: 68px; height: 68px; background: #f5d18d; }
+.resource .dance-button::after { background: linear-gradient(145deg,#b88cca 52%,#9769ad 52%); box-shadow: inset 2px 2px 0 #f6dfef; }
+.resource .dance-button[aria-busy=true]::after { background: #804f98; }
+.resource .dance-button .skill-thumb svg { width: 25px; height: 25px; filter: drop-shadow(0 1px 0 #63417d); }
+.resource .dance-button .skill-thumb strong { line-height: 17px; text-shadow: 0 1px #63417d; }
 .resource .water-skill>span { padding: 5px 9px; color: var(--ui-ink); background: var(--ui-paper); border: 1.5px solid var(--ui-ink); border-radius: 5px 10px 5px 10px; box-shadow: 1px 2px 0 #4b6a7c44; font-size: 9px; }
 .resource .skill-stick { border: 1.5px dashed #fdf2c6; background: #dcf5f433; box-shadow: 0 0 0 10px #f7e7bd22; }
 .resource .aim-reticle { --aim: #eeb58a; filter: drop-shadow(1px 1px 0 #3b5b7090); }
@@ -121,6 +126,25 @@
 .resource .hit-pop>span { display: block; margin-bottom: 1px; font-size: 8px; text-align: center; color: #fffcec; letter-spacing: 2px; -webkit-text-stroke: 1.5px var(--ui-ink); }
 .resource .hit-pop strong { font-weight: 900; }
 .resource .hit-pop svg { position: absolute; top: 8px; right: -21px; width: 17px; height: 17px; color: #f6cd7c; transform: rotate(15deg); }
+.garden-dance-effects { position: absolute; top: 0; left: 0; z-index: 3; pointer-events: none; }
+.garden-dance-effects svg {
+  position: absolute; width: 22px; height: 22px; opacity: 0;
+  filter: drop-shadow(1px 1px 0 var(--ui-ink));
+  animation: dance-float 1.65s ease-out var(--dance-delay, 0s) infinite;
+}
+.garden-dance-effects[data-paused] svg { animation-play-state: paused; }
+.dance-note-left { left: -31px; top: -15px; color: #ffd2ef; --dance-drift: -13px; --dance-tilt: -18deg; }
+.dance-star { left: -5px; top: -24px; color: #ffe28c; --dance-drift: 4px; --dance-tilt: 15deg; --dance-delay: .22s; }
+.dance-note-right { left: 19px; top: -9px; color: #bbebf6; --dance-drift: 14px; --dance-tilt: 17deg; --dance-delay: .42s; }
+@keyframes dance-float {
+  0% { opacity: 0; transform: scale(.55); }
+  18% { opacity: 1; }
+  60% { opacity: 1; }
+  88%, 100% { opacity: 0; transform: translate(var(--dance-drift), -28px) rotate(var(--dance-tilt)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .garden-dance-effects svg { opacity: 1; animation: none; }
+}
 .resource .controls { border: 2px solid var(--ui-ink); border-radius: 17px 7px 17px 7px; background: var(--ui-paper); box-shadow: 4px 5px 0 #4b6a7c55; backdrop-filter: none; }
 .resource .panel-heading { color: #608393; font-weight: 700; }
 .resource .panel-heading .dot { background: #70bfd5; border: 1px solid #4d7184; width: 7px; height: 7px; }
@@ -291,22 +315,27 @@
     display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none;
   }
   .resource .garden-dock .water-skill {
+    --dock-button-size: clamp(44px, 13vw, 54px);
+    --dock-water-size: clamp(54px, 16vw, 64px);
+    --dock-gait-width: clamp(60px, 18vw, 74px);
     position: relative; inset: auto; width: 100%;
-    display: grid; grid-template-columns: 54px 54px 64px 74px; grid-template-rows: 64px auto;
-    justify-content: center; justify-items: center; align-items: center; gap: 8px 12px;
+    display: grid; grid-template-columns: repeat(3, var(--dock-button-size)) var(--dock-water-size) var(--dock-gait-width);
+    grid-template-rows: var(--dock-water-size) auto;
+    justify-content: center; justify-items: center; align-items: center; gap: 8px clamp(8px, 2.5vw, 12px);
   }
   .resource .garden-dock .water-skill>button { pointer-events: auto; }
-  .resource .garden-dock .skill-button { position: relative; inset: auto; width: 54px; height: 54px; }
+  .resource .garden-dock .skill-button { position: relative; inset: auto; width: var(--dock-button-size); height: var(--dock-button-size); }
   .resource .garden-dock .skill-button::after { inset: 4px; }
   .resource .garden-dock .skill-thumb svg { width: 21px; height: 21px; }
   .resource .garden-dock .skill-thumb strong { font-size: 11px; line-height: 15px; letter-spacing: 1px; }
-  .resource .garden-dock #garden-mud { grid-area: 1 / 1; }
-  .resource .garden-dock #garden-tackle { grid-area: 1 / 2; }
-  .resource .garden-dock #garden-fire { grid-area: 1 / 3; width: 64px; height: 64px; }
+  .resource .garden-dock #garden-dance { grid-area: 1 / 1; }
+  .resource .garden-dock #garden-mud { grid-area: 1 / 2; }
+  .resource .garden-dock #garden-tackle { grid-area: 1 / 3; }
+  .resource .garden-dock #garden-fire { grid-area: 1 / 4; width: var(--dock-water-size); height: var(--dock-water-size); }
   .resource .garden-dock #garden-fire .skill-thumb svg { width: 24px; height: 26px; }
   .resource .garden-dock .skill-spark { width: 17px; height: 17px; }
-  .resource .garden-dock .gait-switch { grid-area: 1 / 4; width: 74px; height: 44px; }
-  .resource .garden-dock .skill-stick { grid-area: 1 / 3 / 2 / 4; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+  .resource .garden-dock .gait-switch { grid-area: 1 / 5; width: var(--dock-gait-width); height: 44px; }
+  .resource .garden-dock .skill-stick { grid-area: 1 / 4 / 2 / 5; top: 50%; left: 50%; transform: translate(-50%, -50%); }
   .resource .garden-dock #skill-caption { grid-area: 2 / 1 / 3 / -1; padding: 3px 8px; font-size: 9px; }
   .resource .garden-dock .garden-controls { position: static; width: 100%; padding-top: 10px; gap: 11px; }
   .resource .garden-dock .buddy-stamp { width: 44px; height: 44px; padding: 3px; }
@@ -316,5 +345,6 @@
 
   @media (orientation: landscape) and (max-height: 500px) {
     .garden-dock { left: auto; width: 296px; }
+    .resource .garden-dock .water-skill { --dock-button-size: 46px; --dock-water-size: 56px; --dock-gait-width: 64px; column-gap: 8px; }
   }
 }

@@ -12,6 +12,12 @@ try{
   const durations=await page.evaluate(()=>Object.fromEntries(window.__mudkipTest.diagnostics.clips.map(c=>[c.name,c.duration])));
   const read=()=>page.evaluate(()=>({dance:window.__mudkipTest.dance(),state:window.__mudkipTest.snapshot(),expression:window.__mudkipTest.expression(),swim:window.__mudkipTest.swimming(),basket:window.__mudkipTest.basket()}));
   const advance=seconds=>page.evaluate(seconds=>{const api=window.__mudkipTest;api.pause(false);api.advanceMovement(seconds);api.pause(true);},seconds);
+  const danceButton=page.getByRole('button',{name:'跳舞',exact:true});
+  const danceEffects=page.locator('#garden-dance-effects');
+  const assertDanceHud=async playing=>{
+    assert.equal(await page.locator('#garden-dance').getAttribute('aria-busy'),String(playing));
+    assert.equal(await danceEffects.evaluate(element=>element.hidden),!playing);
+  };
   async function clickCharacter(touch=false){
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     const point=await page.evaluate(()=>window.__mudkipTest.project(...window.__mudkipTest.characterPoint()));
@@ -23,13 +29,19 @@ try{
   await page.waitForTimeout(80);await page.mouse.move(point.x,point.y,{steps:8});await page.mouse.up();
   assert.equal((await read()).state.clip,'Idle');assert.equal((await read()).dance.last,null);
   await gardenAction(page,'重置视角');
+  await assertDanceHud(false);
   checks.push('Dragging from the character and back rotates the camera without starting a dance');
 
   const sequence=[];
   for(let i=0;i<6;i++){
     const position=(await read()).state.position;
-    await clickCharacter();let current=await read();const name=current.state.clip;
+    if(i%2){
+      await danceButton.press('Space');
+      await page.evaluate(()=>window.__mudkipTest.pause(true));
+    }else await clickCharacter();
+    let current=await read();const name=current.state.clip;
     assert(['DanceA','DanceB','DanceC'].includes(name));sequence.push(name);
+    await assertDanceHud(true);
     if(i)assert.notEqual(name,sequence[i-1]);
     assert.deepEqual(current.state.position,position);assert.equal(current.state.target,null);
     await advance(.5);const before=await read();await clickCharacter();current=await read();
@@ -42,15 +54,17 @@ try{
     await advance(durations[name]+.3);current=await read();
     assert.equal(current.state.clip,'Idle');assert.equal(current.expression.state,'open');
     assert.equal(current.dance.completed,i+1);
+    await assertDanceHud(false);
   }
   assert.equal(new Set(sequence.slice(0,3)).size,3);assert.equal(new Set(sequence.slice(3)).size,3);
   console.log('PASS random one-shot dance cycles',sequence.join(', '));
-  checks.push({name:'Real model clicks choose all dances without repeats; each plays once and resets its expression',sequence});
+  checks.push({name:'Character and button choose from the same dances without repeats; effects clear after each performance',sequence});
 
   await page.evaluate(()=>{window.__mudkipTest.moveTo(1.4,2);window.__mudkipTest.advanceMovement(.2);window.__mudkipTest.pause(true);});
   assert.notEqual((await read()).state.target,null);await clickCharacter();assert.equal((await read()).state.target,null);
   assert((await read()).dance.playing);await page.evaluate(()=>window.__mudkipTest.moveTo(0,1.3));
   await advance(6);assert.equal((await read()).state.clip,'Idle');assert.equal((await read()).dance.pending,null);
+  await assertDanceHud(false);
   checks.push('A character tap stops walking; a new destination interrupts the dance');
 
   await page.getByRole('button',{name:'去果篮吃果子',exact:true}).click();
@@ -80,6 +94,7 @@ try{
   await page.evaluate(()=>window.__mudkipTest.pause(false));
   await page.getByRole('button',{name:'喷水',exact:true}).click();await advance(2);
   assert(!(await read()).dance.playing);assert.equal((await read()).dance.pending,null);
+  await assertDanceHud(false);
   checks.push('The water skill interrupts dancing and clears pending dance requests');
 
   await gardenAction(page,'返回动作台');await clickCharacter();assert.equal((await read()).state.clip,'PetReaction');await advance(2);
@@ -88,10 +103,14 @@ try{
   await page.locator('[data-clip="DanceB"]').click();await advance(7);assert.equal((await read()).state.clip,'DanceB');
   checks.push('A and B regain looping playback in the animation stage');
   await page.getByRole('button',{name:'去庭院散步 →',exact:true}).click();await page.setViewportSize({width:390,height:844});
-  await gardenAction(page,'回到起点');await clickCharacter(true);assert((await read()).dance.playing);
+  await gardenAction(page,'回到起点');
+  await clickCharacter(true);assert((await read()).dance.playing);
+  await advance(6);
+  await danceButton.tap();assert((await read()).dance.playing);await assertDanceHud(true);
   await page.screenshot({path:'../renders/garden-dance-mobile.png'});
   await gardenAction(page,'返回动作台');assert.equal((await read()).dance.pending,null);
-  checks.push('A native phone tap starts one dance; scene changes cancel the interaction');
+  assert.equal(await danceButton.count(),0);await assertDanceHud(false);
+  checks.push('A native phone tap on the button starts one dance; scene changes clear the effects');
   assert.deepEqual(errors,[]);
   await fs.writeFile(new URL('../../docs/garden-dance-tests.json',import.meta.url),JSON.stringify({passed:true,checks,errors},null,2));
   console.log(JSON.stringify({checks,errors},null,2));

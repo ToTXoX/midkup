@@ -42,6 +42,7 @@
       <path d="M28 48Q32 50.5 36 48" fill="none" stroke="#3e687f" stroke-width="1.3" stroke-linecap="round"/>
     </symbol>
     <symbol id="ui-star" viewBox="0 0 24 24"><path d="m12 2 2.8 6.2 6.7.8-5 4.6 1.4 6.7-5.9-3.4-5.9 3.4 1.4-6.7-5-4.6 6.7-.8Z" fill="currentColor" stroke="#476477" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="ui-dance-note" viewBox="0 0 24 24"><path d="M9 17V4c3 0 3 3 7 3v4c-4 0-4-3-7-3" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="6" cy="17.5" rx="4" ry="3" fill="currentColor"/><path d="M19 13v6m-3-3h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
     <symbol id="ui-walk" viewBox="0 0 24 24"><g fill="currentColor"><ellipse cx="8" cy="15" rx="3" ry="4" transform="rotate(-20 8 15)"/><ellipse cx="16" cy="9" rx="3" ry="4" transform="rotate(20 16 9)"/><circle cx="6" cy="8" r="1.5"/><circle cx="18" cy="3" r="1.5"/></g></symbol>
     <symbol id="ui-run" viewBox="0 0 24 24"><path d="m8 6 5 2 2 5 5 2m-7-7-4 6-5 2m7-3 3 7M3 5h4M1 9h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="4" r="2" fill="currentColor"/></symbol>
     <symbol id="ui-reset" viewBox="0 0 24 24"><path d="M5 7a8 8 0 1 1-1 9M4 3v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -94,6 +95,11 @@
   </section>
   <div id="aim-reticle" class="aim-reticle" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><b></b><span id="aim-label"></span></div>
   <div id="hit-pop" class="hit-pop" aria-hidden="true" hidden><span>ナイス！</span><strong>命中 +1</strong><svg viewBox="0 0 24 24"><use href="#ui-star"/></svg></div>
+  <div id="garden-dance-effects" class="garden-dance-effects" aria-hidden="true" hidden>
+    <svg class="dance-note-left" viewBox="0 0 24 24"><use href="#ui-dance-note"/></svg>
+    <svg class="dance-star" viewBox="0 0 24 24"><use href="#ui-star"/></svg>
+    <svg class="dance-note-right" viewBox="0 0 24 24"><use href="#ui-dance-note"/></svg>
+  </div>
   <div class="target-hotspots" aria-label="选择练习靶"><button data-aim-target="normal" aria-label="瞄准普通靶" hidden><span>普通靶</span></button><button data-aim-target="moving" aria-label="瞄准滑轨靶" hidden><span>滑轨靶</span></button><button data-aim-target="heavy" aria-label="瞄准重型靶" hidden><span>重型靶</span></button></div>
   <div class="target-hotspots"><button id="garden-basket" aria-label="去果篮吃果子" hidden></button></div>
   <nav id="garden-menu" class="garden-menu" aria-label="庭院工具菜单" hidden>
@@ -103,7 +109,9 @@
   </nav>
   <div id="garden-dock" class="garden-dock" hidden>
     <div id="garden-skill" class="water-skill">
-      <button id="garden-gait" class="gait-switch" role="switch" aria-label="小跑模式" aria-checked="true" title="切换为轻快走"><span class="gait-track" aria-hidden="true"><span><svg viewBox="0 0 24 24"><use href="#ui-walk"/></svg></span><span><svg viewBox="0 0 24 24"><use href="#ui-run"/></svg></span></span></button>
+      <button id="garden-dance" class="skill-button dance-button" type="button" aria-busy="false">
+        <span class="skill-thumb"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ui-dance-note"/></svg><strong>跳舞</strong></span>
+      </button>
       <div id="skill-stick" class="skill-stick" aria-hidden="true" hidden></div>
       <button id="garden-mud" class="skill-button mud-button" aria-label="掷泥" title="掷泥" disabled>
         <span class="skill-thumb"><svg viewBox="0 0 32 28" aria-hidden="true"><path d="M6 17c0-4 4-6 7-5 1-5 8-5 10-1 5 0 7 4 5 8-1 3-4 4-8 4H12c-4 0-7-2-6-6Z" fill="currentColor"/><path d="m5 11-2-2m10-4V3m12 3 2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 17c2-2 5-3 8-2" fill="none" stroke="#a06a47" stroke-width="1.7" stroke-linecap="round"/></svg><strong>掷泥</strong></span>
@@ -115,6 +123,7 @@
         <svg class="skill-spark" viewBox="0 0 24 24" aria-hidden="true"><use href="#ui-star"/></svg>
         <span id="skill-thumb" class="skill-thumb"><svg viewBox="0 0 40 44" aria-hidden="true"><path d="M20 3C17 10 7 19 7 27a13 13 0 0 0 26 0C33 19 23 10 20 3Z" fill="currentColor"/><path d="M12 27c0 5 3 8 8 8" fill="none" stroke="#5fa5b5" stroke-width="3" stroke-linecap="round"/></svg><strong id="skill-title">水枪</strong></span>
       </button>
+      <button id="garden-gait" class="gait-switch" role="switch" aria-label="小跑模式" aria-checked="true" title="切换为轻快走"><span class="gait-track" aria-hidden="true"><span><svg viewBox="0 0 24 24"><use href="#ui-walk"/></svg></span><span><svg viewBox="0 0 24 24"><use href="#ui-run"/></svg></span></span></button>
       <span id="skill-caption">点按喷水 · 拖动瞄准</span>
     </div>
     <section id="garden-controls" class="garden-controls" aria-label="zuzu 的对话">

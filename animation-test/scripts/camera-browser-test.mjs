@@ -14,6 +14,21 @@ async function rotate(page,from={x:900,y:330},to={x:740,y:370}){
   assert(await page.evaluate(()=>getSelection().isCollapsed),'Rotation must not select the page');
   return change;
 }
+const zoomState=page=>page.evaluate(()=>{
+  const {position,target}=window.__mudkipTest.camera();
+  return {position,target,distance:Math.hypot(...position.map((value,i)=>value-target[i])),scale:visualViewport.scale};
+});
+const touch=(session,type,points)=>session.send('Input.dispatchTouchEvent',{
+  type,touchPoints:points.map(([x,y],i)=>({x,y,id:i+1})),
+});
+async function pinch(session,{x,y},from,to){
+  await touch(session,'touchStart',[[x-from,y],[x+from,y]]);
+  for(let i=1;i<=8;i++){
+    const radius=from+(to-from)*i/8;
+    await touch(session,'touchMove',[[x-radius,y],[x+radius,y]]);
+  }
+  await touch(session,'touchEnd',[]);
+}
 try{
   for(const entry of ['','resources.html?clip=Run','resources.html?scene=garden']){
     const page=await browser.newPage({viewport:{width:1280,height:900}});
@@ -72,22 +87,16 @@ try{
   assert(Math.hypot(...after.map((v,i)=>v-before[i]))>.05,'Native touch must rotate the model');
   assert(await page.evaluate(()=>getSelection().isCollapsed));
   checks.push({name:'Native phone touch rotates the stage without selecting text'});
+  const stageBefore=await zoomState(page);
+  await pinch(session,{x:195,y:230},36,88);
+  await page.waitForFunction(distance=>{
+    const {position,target}=window.__mudkipTest.camera();
+    return Math.hypot(...position.map((value,i)=>value-target[i]))<distance*.9;
+  },stageBefore.distance);
+  assert.equal((await zoomState(page)).scale,stageBefore.scale);
+  checks.push({name:'Pinching zooms the animation stage camera'});
   await page.selectOption('#scene-view','garden');
   await gardenAction(page,'回到起点');
-  const zoomState=()=>page.evaluate(()=>{
-    const {position,target}=window.__mudkipTest.camera();
-    return {distance:Math.hypot(...position.map((value,i)=>value-target[i])),scale:visualViewport.scale};
-  });
-  const beforePinch=await zoomState();
-  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:160,y:300,id:4},{x:230,y:300,id:5}]});
-  await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:95,y:300,id:4},{x:295,y:300,id:5}]});
-  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  await page.waitForTimeout(100);
-  const afterPinch=await zoomState();
-  assert(Math.abs(afterPinch.distance-beforePinch.distance)<.001,'Pinching must not zoom the garden camera');
-  assert.equal(afterPinch.scale,beforePinch.scale);
-  assert.equal(await page.locator('#app').evaluate(el=>getComputedStyle(el).touchAction),'none');
-  checks.push({name:'Pinching the garden leaves camera distance and page scale fixed'});
   const gardenBefore=await page.evaluate(()=>window.__mudkipTest.camera().position);
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:180,y:300,id:3}]});
   for(let i=1;i<=8;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:180+i*10,y:300+i*3,id:3}]});
@@ -108,14 +117,27 @@ try{
   await phone.waitForFunction(()=>window.__mudkipTest?.diagnostics.ready);
   const phoneSession=await phone.context().newCDPSession(phone);
   const notice=phone.getByRole('status').filter({hasText:'双指捏合，恢复网页原比例'});
+  const beforePinch=await zoomState(phone);
+  const zuzu=await phone.evaluate(()=>window.__mudkipTest.project(...window.__mudkipTest.characterPoint()));
+  await pinch(phoneSession,zuzu,36,88);
+  const zoomed=await zoomState(phone);
+  assert(zoomed.distance<beforePinch.distance*.8,'Spreading two fingers zooms the garden camera in');
+  assert.equal(zoomed.scale,beforePinch.scale,'The HUD stays at the original page scale');
+  assert.equal(await phone.evaluate(()=>window.__mudkipTest.snapshot().clip),'Idle');
+  assert.equal(await phone.evaluate(()=>window.__mudkipTest.snapshot().target),null);
+  await pinch(phoneSession,zuzu,88,60);
+  assert((await zoomState(phone)).distance>zoomed.distance*1.2,'Pinching fingers together zooms out');
+  await phone.getByRole('button',{name:'恢复全景'}).tap();
+  await phone.waitForFunction(before=>{
+    const {position,target}=window.__mudkipTest.camera();
+    return Math.hypot(...position.map((value,i)=>value-before.position[i]))<.01&&
+      Math.hypot(...target.map((value,i)=>value-before.target[i]))<.01;
+  },beforePinch);
+  checks.push({name:'Phone pinching zooms the garden without scaling the HUD or moving zuzu, and full view resets the camera'});
+
   await phoneSession.send('Emulation.setPageScaleFactor',{pageScaleFactor:1.7});
   await notice.waitFor({state:'visible'});
-  const pinch=(type,points)=>phoneSession.send('Input.dispatchTouchEvent',{
-    type,touchPoints:points.map(([x,y],i)=>({x,y,id:i+1})),
-  });
-  await pinch('touchStart',[[50,220],[350,220]]);
-  for(let i=1;i<=15;i++)await pinch('touchMove',[[50+i*6,220],[350-i*6,220]]);
-  await pinch('touchEnd',[]);
+  await pinch(phoneSession,{x:200,y:220},150,60);
   await notice.waitFor({state:'hidden'});
   assert.equal(await phone.evaluate(()=>visualViewport.scale),1);
   assert.equal(await phone.locator('#app').evaluate(el=>getComputedStyle(el).touchAction),'none');

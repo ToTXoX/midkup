@@ -61,6 +61,10 @@ let gardenMeal=null,mealsEaten=0;
 const gardenDances=['DanceA','DanceB','DanceC'];
 let danceBag=[],lastGardenDance=null,pendingGardenDance=null,completedGardenDances=0;
 const danceCounts={DanceA:0,DanceB:0,DanceC:0};
+const gardenDanceButton = $('garden-dance');
+const gardenDanceEffects = $('garden-dance-effects');
+const danceAnchor = new THREE.Vector3();
+let danceHead;
 let waterFramed = false;
 let tailDanceFramed = false;
 let eyeExpressions=null;
@@ -83,7 +87,7 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 $('scene').appendChild(renderer.domElement);
 renderer.domElement.tabIndex=0;
 renderer.domElement.draggable=false;
-renderer.domElement.setAttribute('aria-label','庭院：点击 zuzu 跳舞，点击草地移动，右下角水枪键喷水，拖动技能键瞄准');
+renderer.domElement.setAttribute('aria-label','庭院：点击草地移动，双指缩放，点击 zuzu 或按跳舞键跳舞，点按水枪键喷水，拖动技能键瞄准');
 
 const STAGE_FOV=36;
 const camera = new THREE.PerspectiveCamera(STAGE_FOV, 1, .05, 40);
@@ -93,7 +97,8 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = mobileGraphics ? .1 : .05;
 controls.enablePan = false;
-controls.touches.TWO = null;
+// With pan disabled, a two-finger gesture only zooms the camera.
+controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 controls.minDistance = 1.9;
 controls.maxDistance = 6;
 controls.minPolarAngle = .25;
@@ -105,6 +110,7 @@ function resetView() {
   controls.update();
   controls.enableDamping = true;
   const garden=resourcePreview?.view==='garden';
+  controls.zoomToCursor = garden && mobileGraphics;
   camera.fov=garden?(resourcePreview.layout.camera.fov??STAGE_FOV):STAGE_FOV;
   camera.near=.05;
   camera.far=40;
@@ -328,6 +334,14 @@ function setHudText(id, text) {
 }
 function gardenFeedback(message){setHudText('garden-feedback',message);}
 function isGardenDancePlaying(){return resourcePreview?.view==='garden'&&gardenDances.includes(currentName);}
+function positionGardenDanceEffects() {
+  if (!gardenDanceEffects || gardenDanceEffects.hidden) return;
+  danceHead.getWorldPosition(danceAnchor);
+  danceAnchor.y += .17;
+  danceAnchor.project(camera);
+  gardenDanceEffects.style.visibility = Math.abs(danceAnchor.z) <= 1 ? '' : 'hidden';
+  gardenDanceEffects.style.transform = `translate(${(danceAnchor.x + 1) * innerWidth / 2}px, ${(1 - danceAnchor.y) * innerHeight / 2}px)`;
+}
 function cancelGardenDanceRequest(){pendingGardenDance=null;}
 function chooseGardenDance(){
   if(!danceBag.length){
@@ -440,7 +454,7 @@ function resetActor(){
     actor.position.fromArray(resourcePreview.layout.spawn.position);
     actor.position.y=(resourcePreview.groundHeight(actor.position.x,actor.position.z)??actor.position.y)+.005;
     actor.rotation.set(0,resourcePreview.layout.spawn.yaw,0);
-    gardenFeedback('回到起点啦，点我可以跳舞～');
+    gardenFeedback('回到起点啦，按跳舞键一起玩吧～');
   }else{actor.position.set(0,.005,0);actor.quaternion.identity();}
 }
 function playClip(name, { immediate = false, force = false, completed = false,gameShot=null } = {}) {
@@ -474,6 +488,11 @@ function playClip(name, { immediate = false, force = false, completed = false,ga
   }
   active = next;
   currentName = name;
+  if (gardenDanceEffects) {
+    const dancing = isGardenDancePlaying();
+    gardenDanceEffects.hidden = !dancing;
+    gardenDanceButton.setAttribute('aria-busy', String(dancing));
+  }
   eyeExpressions?.update(name,0);
   const wasTailDanceFramed=tailDanceFramed;tailDanceFramed=name==='DanceB';
   resourcePreview?.onActionChange(name,{completed,gameShot});
@@ -509,6 +528,7 @@ function pet() {
 }
 function updatePauseUI() {
   if(state.paused)skillInput?.cancel();
+  gardenDanceEffects?.toggleAttribute('data-paused', state.paused);
   const label=state.paused?'继续':'暂停';$('pause').textContent=label;
   if($('garden-pause')){
     $('garden-pause').setAttribute('aria-label',label);$('garden-pause').title=label;
@@ -704,6 +724,7 @@ function updateCombatUI(){
   }
   const groundDisabled=!garden||state.paused||busy||groundBusy||!!swimming?.inWater||gesture.active;
   $('garden-fire').disabled=state.paused||busy||groundBusy||!!swimming?.busy;
+  if (gardenDanceButton.disabled !== groundBusy) gardenDanceButton.disabled = groundBusy;
   $('garden-tackle').disabled=groundDisabled;
   $('garden-mud').disabled=groundDisabled||!mud?.ready;
   $('garden-tackle').dataset.busy=String(tackling);
@@ -830,7 +851,10 @@ try {
   model = gltf.scene;
   visualPivot.add(model);
   toon?.apply(model,'character');
-  if(resourceMode)eyeExpressions=createEyeExpressions(model,metadata.expressions);
+  if(resourceMode){
+    eyeExpressions=createEyeExpressions(model,metadata.expressions);
+    danceHead = model.getObjectByName('Head');
+  }
   const meshes = [], maps = new Set(), skeletons = new Set();
   model.traverse((o) => {
     if (o.isMesh) {
@@ -855,7 +879,7 @@ try {
     const danced=isGardenDancePlaying();
     if(danced)completedGardenDances++;
     playClip(swimming?.inWater?'SwimIdle':'Idle',{completed:true});
-    if(danced)gardenFeedback('跳完啦，点我再跳一支～');
+    if(danced)gardenFeedback('跳完啦，再按一次跳舞键吧～');
   });
   if(resourceMode){
     resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,assets:previewAssets,metadata,stageColliders:[stage,floor],toon,heartTexture,mobileGraphics,onWaterContact:event=>combat?.contact(event)});
@@ -929,6 +953,8 @@ try {
         gardenFeedback('音乐播放失败，点开关重试。');
       }
     });
+    const touchViewHint = '双指缩放 · 拖动旋转';
+    if (mobileGraphics) $('view-hint').textContent = touchViewHint;
     $('scene-view').disabled=false;
     $('scene-view').addEventListener('change',(event)=>{
       const garden=event.target.value==='garden';
@@ -959,7 +985,7 @@ try {
       key.shadow.camera.updateProjectionMatrix();key.position.set(garden?-6:-2.5,garden?12:4.5,garden?8:3);
       toon.setView(garden?'garden':'stage');
       $('resource-hint').textContent=garden?'点果树瞄准 · 用水枪打落果子。':'十二段动作 · 可以逐帧查看。';
-      $('view-hint').textContent=garden?'点 zuzu 跳舞 · 拖动旋转':'拖动旋转 · 滚轮缩放';
+      $('view-hint').textContent=mobileGraphics?touchViewHint:garden?'点草地移动 · 拖动旋转':'拖动旋转 · 滚轮缩放';
       resetView();
     });
     const changeView=(view)=>{$('scene-view').value=view;$('scene-view').dispatchEvent(new Event('change'));};
@@ -987,6 +1013,7 @@ try {
       updateCombatUI();
     });
     $('garden-gait').addEventListener('click',()=>setGait(state.travelGait==='Run'?'Walk':'Run'));
+    gardenDanceButton.addEventListener('click', requestGardenDance);
     document.querySelectorAll('[data-aim-target]').forEach(b=>b.addEventListener('click',()=>{aimGardenTarget(resourcePreview.targetPoint(b.dataset.aimTarget),b.dataset.aimTarget);renderer.domElement.focus({preventScroll:true});}));
     $('garden-basket').addEventListener('click',()=>{goEatGardenFruit();renderer.domElement.focus({preventScroll:true});});
     $('garden-tackle').addEventListener('click',castTackle);
@@ -1137,6 +1164,7 @@ renderer.setAnimationLoop((now) => {
     mudEffects.prepare(camera);
   }
   if(toon)toon.renderFrame(camera);else renderer.render(scene,camera);
+  positionGardenDanceEffects();
   if (state.loaded && !diagnostics.ready) {
     diagnostics.ready = true;
     if (resourceMode) {
