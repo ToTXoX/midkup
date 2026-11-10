@@ -345,6 +345,11 @@
   .resource .garden-dock .garden-speaker { top: -11px; font-size: 14px; }
   .resource .garden-dock .garden-feedback { min-height: 0; font-size: 14px; line-height: 1.35; }
 
+  @media (max-width: 360px) {
+    .resource.garden-active .brand-mark { width: 36px; height: 36px; }
+    .resource.garden-active h1 { letter-spacing: .5px; }
+  }
+
   @media (orientation: landscape) and (max-height: 500px) {
     .garden-dock { left: auto; width: 296px; }
     .resource .garden-dock .water-skill { --dock-button-size: 46px; --dock-water-size: 56px; --dock-gait-width: 64px; column-gap: 8px; }

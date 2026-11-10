@@ -87,7 +87,7 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 $('scene').appendChild(renderer.domElement);
 renderer.domElement.tabIndex=0;
 renderer.domElement.draggable=false;
-renderer.domElement.setAttribute('aria-label','庭院：点击草地移动，双指缩放，点击 zuzu 或按跳舞键跳舞，点按水枪键喷水，拖动技能键瞄准');
+renderer.domElement.setAttribute('aria-label','庭院：点击草地移动，双指缩放，点击 ZUZU 或按跳舞键跳舞，点按水枪键喷水，拖动技能键瞄准');
 
 const STAGE_FOV=36;
 const camera = new THREE.PerspectiveCamera(STAGE_FOV, 1, .05, 40);
