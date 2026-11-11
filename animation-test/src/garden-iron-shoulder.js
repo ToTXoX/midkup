@@ -9,6 +9,12 @@ const damage = 100;
 const beats = [.28, .44, .55];
 const up = new Vector3(0, 1, 0);
 
+export const ironShoulderSoundCues = [
+  { time: .035, sound: 'tackleGather', rate: .82, volume: .72 },
+  ...beats.map((time, i) => ({ time, sound: 'ironPulse', rate: .89 + i * .11, volume: .73 + i * .09 })),
+  { time: chargeEnd, sound: 'ironRush' },
+];
+
 export function createGardenIronShoulder({ actor, navigation, groundHeight, targetContact, effects, onPhase, onHit }) {
   const origin = new Vector3();
   const direction = new Vector3();

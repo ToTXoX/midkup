@@ -18,6 +18,13 @@ const up = new Vector3(0, 1, 0);
 const palm = new Vector3(0, .14, 0);
 const { clamp, lerp, smoothstep } = MathUtils;
 
+export const basketballSoundCues = [
+  { time: (dribbleStart + handoff) / 2, sound: 'ballBounce', rate: .96, volume: .65 },
+  { time: (handoff + gather) / 2, sound: 'ballBounce', rate: 1.08, volume: .61 },
+  { time: gather, sound: 'ballCatch', volume: .74 },
+  { time: release, sound: 'ballThrow' },
+];
+
 function createBall(scene) {
   const ball = new Group();
   ball.name = 'Dawn basketball';

@@ -14,6 +14,8 @@ import { createGardenIronShoulder } from './garden-iron-shoulder.js';
 import { createGardenBasketball } from './garden-basketball.js';
 import { createDawnJumpEffect } from './dawn-jump-effect.js';
 import { createDawnRap } from './dawn-rap.js';
+import { createSkillAudio } from './skill-audio.js';
+import { createSkillAudioCues } from './skill-audio-cues.js';
 import { createTackleEffects } from './tackle-effects.js';
 import { createGardenMud } from './garden-mud.js';
 import { createMudEffects } from './mud-effects.js';
@@ -59,6 +61,8 @@ const defaultMetadata = { clips: [{name:'Idle',loop:true},{name:'Walk',loop:true
 let metadata = defaultMetadata;
 let clipSettings = new Map(metadata.clips.map((c)=>[c.name,c]));
 const locomotion = (name) => metadata.locomotion?.[name];
+const skillAudio = createSkillAudio();
+const skillAudioCues = createSkillAudioCues(skillAudio);
 let resourcePreview, stageRoster, gardenFriends;
 let navigation,gardenWalker,combat,skillInput,skillAimBefore,swimming,footprints;
 let tackle,tackleEffects,mud,mudEffects,iron,basketball,jumpEffect,rap,guestAim=null;
@@ -390,6 +394,7 @@ function startGardenDance({completedMeal=false}={}){
 }
 function requestGardenDance(){
   if(!isZuzu()||!state.loaded||resourcePreview?.view!=='garden'||groundSkillActive())return;
+  skillAudio.enable();
   state.paused=false;updatePauseUI();
   if(isGardenDancePlaying()){gardenFeedback('这支还没跳完，等我一下～');return;}
   if(pendingGardenDance){gardenFeedback(pendingGardenDance.kind==='meal'?'吃完这颗果子就跳给你看～':'上岸后就跳给你看～');return;}
@@ -466,6 +471,7 @@ function setGait(name){
   if(target&&resourcePreview?.view==='garden'&&!swimming?.inWater)playClip(name);
 }
 function stopGardenActions(){
+  skillAudio.stop();
   cancelGardenDanceRequest();
   swimming?.reset();
   tackle?.reset();
@@ -743,12 +749,12 @@ function playClip(name, { immediate = false, force = false, completed = false,ga
   }
   active = next;
   currentName = name;
+  skillAudioCues.setClip(clipSettings.get(name), completed);
+  if(skillAudioCues.active)skillAudio.enable();
   if (name !== 'Basketball' && !basketball?.active) basketball?.hide();
   if (name !== 'Jump') jumpEffect?.hide();
-  if(name==='Rap'){
-    rap??=createDawnRap(scene);
-    if(navigator.userActivation?.hasBeenActive!==false)rap.enableSound();
-  }else rap?.hide();
+  if(name==='Rap')rap??=createDawnRap(scene,skillAudio);
+  else rap?.hide();
   if (gardenDanceEffects) {
     const dancing = isGardenDancePlaying();
     gardenDanceEffects.hidden = !dancing;
@@ -800,8 +806,11 @@ function pet() {
   showHearts();
 }
 function updatePauseUI() {
-  if(state.paused)skillInput?.cancel();
-  else if(currentName==='Rap'&&navigator.userActivation?.hasBeenActive!==false)rap?.enableSound();
+  skillAudio.setPaused(state.paused);
+  if(state.paused){
+    skillInput?.cancel();
+    rap?.stopSound();
+  }else if(skillAudioCues.active||groundSkillActive())skillAudio.enable();
   gardenDanceEffects?.toggleAttribute('data-paused', state.paused);
   const label=state.paused?'继续':'暂停';$('pause').textContent=label;
   if($('garden-pause')){
@@ -848,6 +857,7 @@ function seek(time) {
   for (const a of actions.values()) if (a !== active) a.stop();
   active.stopFading().setEffectiveWeight(1);
   sampleActivePose(THREE.MathUtils.clamp(time, 0, active.getClip().duration - 1e-7));
+  skillAudioCues.seek(active.time);
   if(isZuzu())eyeExpressions?.update(currentName,active.time);
   model.updateMatrixWorld(true);
   updateTimeline();
@@ -970,6 +980,7 @@ function forwardWaterPoint(){
 }
 function castWaterSkill(){
   if(!isZuzu()||!combat||resourcePreview.view!=='garden'||state.paused||swimming?.busy||groundSkillActive()||combat.debug().phase!=='idle')return false;
+  skillAudio.enable();
   if(!combat.debug().targetId)combat.aimAt(forwardWaterPoint(),null,{silent:true});
   const fired=combat.fire(state.paused);updateCombatUI();return fired;
 }
@@ -1002,6 +1013,7 @@ function castGroundSkill(skill){
   const aim=combat.debug();
   if(aim.phase!=='idle')return false;
   const locked=gardenFriends.targetName(aim.targetId)||resourcePreview.layout.targets.some(target=>target.id===aim.targetId)?aim.targetId:null;
+  skillAudio.enable();
   cancelGardenDanceRequest();cancelGardenMeal();swimming.reset();stopTravel();clearHearts();combat.restorePose();
   playClip('Idle',{immediate:true});
   const started=skill.start(locked?resourcePreview.targetPoint(locked):null,locked);
@@ -1017,7 +1029,6 @@ function castIronShoulder(){
   const aim=guestAim?resourcePreview.targetPoint(guestAim):null;
   if(!iron.start(aim))return false;
   stopTravel();clearHearts();
-  tackleEffects.enableBeatSound();
   playClip('IronShoulder',{immediate:true,force:true});
   updateCombatUI();
   return true;
@@ -1192,6 +1203,7 @@ window.__mudkipTest = {
   basketball:()=>basketball?{...basketball.debug(),targetId:guestAim}:null,
   jump:()=>({phase:jumpPhase(),cooldown:jumpCooldown,lettering:jumpEffect?.debug()??null}),
   rap:()=>({active:currentName==='Rap',cooldown:rapCooldown,glasses:false,pointing:false,sound:false,...rap?.debug()}),
+  skillAudio:skillAudio.debug,
   mud:()=>mud?{...mud.debug(),effects:mudEffects.debug()}:null,
   castTackle,
   castMud,
@@ -1259,7 +1271,11 @@ try {
   ({ mixer, actions, clipSettings } = createPlayback(gltf, metadata));
   for (const name of Object.keys(labels)) if (!actions.has(name)) throw new Error(`GLB 缺少 ${name} 动作`);
   if(resourceMode){
-    resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,assets:previewAssets,metadata,stageColliders:[stage,floor],toon,heartTexture,mobileGraphics,onWaterContact:event=>combat?.contact(event)});
+    resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,assets:previewAssets,metadata,stageColliders:[stage,floor],toon,heartTexture,mobileGraphics,
+      onWaterContact:event=>{
+        skillAudio.play('waterSplash',{volume:event.targetId?1:.78});
+        combat?.contact(event);
+      }});
     footprints=createGardenFootprints({scene,actor,model,clips:metadata.clips,
       sampleSurface:resourcePreview.footprintSurface,isWater:point=>swimming?.contains(point)});
     combat=createGardenCombat({actor,model,preview:resourcePreview,
@@ -1282,9 +1298,12 @@ try {
           playClip('Idle',{immediate:true});
           return;
         }
+        if(phase==='blocked')skillAudio.play('targetHit',{rate:.79,volume:.83});
+        if(phase==='miss')skillAudio.play('skid',{rate:.83});
         gardenFeedback({charge:'侧身抖肩蓄力…',dash:'铁山靠！',blocked:'碰到障碍，收住了。',miss:'冲空了。'}[phase]);
       },
       onHit:(id,direction,damage)=>{
+        skillAudio.play('ironHit');
         if(id.startsWith('visitor:')){
           const message=gardenFriends.hit(id,'iron',direction);
           if(message)gardenFeedback(`${message}物理伤害 ${damage}`);
@@ -1302,6 +1321,9 @@ try {
       onContact:(contact,velocity,outOfRange)=>{
         const direction=velocity.clone().setY(0).normalize();
         const id=contact.targetId;
+        if(id||contact.kind==='surface')skillAudio.play('ballImpact',{volume:id?1:.72});
+        if(contact.kind==='ground')skillAudio.play('ballBounce',{rate:.86,volume:.63});
+        if(contact.kind==='water')skillAudio.play('waterSplash',{rate:.77});
         if(id){
           tackleEffects.hit(contact.point,direction);
           if(id.startsWith('visitor:')){
@@ -1321,15 +1343,23 @@ try {
     tackle=createGardenTackle({actor,pivot:visualPivot,model,navigation,groundHeight:resourcePreview.groundHeight,
       targetContact:resourcePreview.tackleTargetContact,effects:tackleEffects,
       onPhase:(phase,kind,id)=>{
-        if(phase==='windup')gardenFeedback('压低身体，准备撞击…');
-        if(phase==='dash')gardenFeedback('蹬地，扑击！');
+        if(phase==='windup'){
+          skillAudio.play('tackleGather');
+          gardenFeedback('压低身体，准备撞击…');
+        }
+        if(phase==='dash'){
+          skillAudio.play('tackleRush');
+          gardenFeedback('蹬地，扑击！');
+        }
         if(phase==='hitstop'&&!gardenFriends.targetName(id))gardenFeedback('砰！撞中靶子了。');
         if(phase==='recover'){
+          skillAudio.play(kind==='blocked'?'targetHit':kind==='miss'?'skid':'landing',{volume:kind==='hit'?.55:.86});
           playClip('Idle');
           if(kind==='miss')gardenFeedback('急刹！走近靶子再试一次。');
           if(kind==='blocked')gardenFeedback('前面有障碍，刹住啦。');
         }
       },onHit:(id,direction,hold)=>{
+        skillAudio.play(id.startsWith('visitor:')?'bodyHit':'targetHit');
         if(id.startsWith('visitor:')){
           const message=gardenFriends.hit(id,'tackle',direction);
           if(message)gardenFeedback(message);
@@ -1337,8 +1367,16 @@ try {
       }});
     mudEffects=createMudEffects(resourcePreview.environment);
     mud=createGardenMud({actor,pivot:visualPivot,model,groundHeight:resourcePreview.groundHeight,
-      trace:resourcePreview.traceGardenProjectile,resolveTarget:resourcePreview.targetPoint,effects:mudEffects,
-      onRelease:()=>gardenFeedback('把泥团甩出去！'),onContact:(contact,velocity)=>{
+      trace:resourcePreview.traceGardenProjectile,resolveTarget:resourcePreview.targetPoint,
+      effects:{...mudEffects,scrape:(point,direction)=>{
+        mudEffects.scrape(point,direction);
+        skillAudio.play('mudScrape');
+      }},
+      onRelease:()=>{
+        skillAudio.play('mudThrow');
+        gardenFeedback('把泥团甩出去！');
+      },onContact:(contact,velocity)=>{
+        skillAudio.play(contact.kind==='water'?'waterSplash':'mudSplat',{volume:contact.targetId?1:.81});
         if(contact.targetId?.startsWith('visitor:')){
           const message=gardenFriends.hit(contact.targetId,'mud',velocity);
           if(message)gardenFeedback(message);
@@ -1482,7 +1520,7 @@ try {
         const point=actor.position.clone().addScaledVector(direction,2.8);point.y=(resourcePreview.groundHeight(point.x,point.z)??actor.position.y-.005)+.02;
         combat.aimAt(point,null,{predict:false,silent:true});gardenFeedback('拖动调整方向，松手喷水。');updateCombatUI();
       },
-      onRelease:()=>{controls.enabled=true;combat.fire(state.paused);updateCombatUI();},
+      onRelease:()=>{controls.enabled=true;skillAudio.enable();combat.fire(state.paused);updateCombatUI();},
       onCancel:()=>{controls.enabled=true;if(skillAimBefore?.point)combat.aimAt(new THREE.Vector3().fromArray(skillAimBefore.point),skillAimBefore.targetId,{silent:true});else{combat.setMode('move');combat.cancel();}gardenFeedback('已取消瞄准。');updateCombatUI();},
       onTap:castWaterSkill});
     $('garden-clear-hits').addEventListener('click',()=>{resourcePreview.targetFeedback.reset();gardenFeedback('命中次数清零啦，再来一轮。');updateCombatUI();});
@@ -1545,6 +1583,7 @@ function stepSimulation(delta){
       sampleActivePose(iron.time);
       visualPivot.position.x=iron.lunge;
     }else if(!basketball?.playing)mixer.update(tackle?.holding?0:delta);
+    if(skillAudioCues.active)skillAudioCues.update(active.time, currentName.startsWith('Water')?state.waterRate:1);
     if(garden&&isZuzu())swimming?.update(delta);
     if (target && locomotion(currentName)) {
       const waypoint=resourcePreview?.view==='garden'?gardenWalker.waypoint:target;

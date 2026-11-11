@@ -124,13 +124,13 @@ function makeBeat(audio, duration) {
   return buffer;
 }
 
-export function createDawnRap(scene) {
+export function createDawnRap(scene, skillAudio) {
   const effects = createDawnRapEffects(scene, rhythm);
   const glasses = createGlasses();
   const finger = new Mesh(new CapsuleGeometry(.075, .245, 4, 8), new MeshToonMaterial({ color: '#ffd574' }));
   finger.name = 'Dawn rap pointing finger';
   finger.raycast = () => {};
-  let audio, beatTrack, source;
+  let beatTrack, source;
   let startedAt = 0, offset = 0;
 
   function stopSound() {
@@ -141,6 +141,7 @@ export function createDawnRap(scene) {
   }
 
   function syncSound(time, duration, paused) {
+    const audio = skillAudio.context;
     if (paused || !audio || audio.state !== 'running') {
       stopSound();
       return;
@@ -150,18 +151,14 @@ export function createDawnRap(scene) {
     beatTrack ??= makeBeat(audio, duration);
     source = audio.createBufferSource();
     source.buffer = beatTrack;
-    source.connect(audio.destination);
+    source.connect(skillAudio.output);
     startedAt = audio.currentTime;
     offset = time;
     source.start(startedAt, time);
   }
 
   return {
-    enableSound() {
-      if (!globalThis.AudioContext) return;
-      try { audio ??= new AudioContext(); } catch { return; }
-      if (audio.state !== 'running') audio.resume().catch(() => {});
-    },
+    stopSound,
     update(model, time, duration, paused, camera, viewportHeight) {
       const on = MathUtils.smoothstep(time, .13, .45);
       const off = MathUtils.smoothstep(time, 4.19, 4.54);
