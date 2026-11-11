@@ -135,10 +135,10 @@
             "pointer": "/buffers/0",
             "mimeType": "application/gltf-buffer",
             "storage": "glb",
-            "byteLength": 1991012
+            "byteLength": 2125096
           }
         ],
-        "animationCount": 4,
+        "animationCount": 7,
         "materialCount": 21,
         "hasMorphTargets": false,
         "hasSkins": true,

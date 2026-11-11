@@ -3,7 +3,17 @@
     { "name": "Idle", "duration": 3.75, "loop": true, "label": "待机 · 挥手打招呼" },
     { "name": "Walk", "duration": 0.5, "loop": true, "label": "走路 · 轻快踏步" },
     { "name": "Run", "duration": 0.3333333333333333, "loop": true, "label": "小跑 · 快速蹬地" },
-    { "name": "IronShoulder", "duration": 1.25, "loop": false, "label": "铁山靠 · 高肩侧撞" }
+    { "name": "IronShoulder", "duration": 1.25, "loop": false, "label": "铁山靠 · 高肩侧撞" },
+    { "name": "Basketball", "duration": 2.375, "loop": false, "label": "篮球 · 交叉运球转身投篮" },
+    {
+      "name": "Jump", "duration": 1.25, "loop": false, "label": "跳 · 空中展翅",
+      "events": [
+        { "time": 0.25, "event": "jump_takeoff" },
+        { "time": 0.5833333333333334, "event": "jump_apex" },
+        { "time": 0.9166666666666666, "event": "jump_land" }
+      ]
+    },
+    { "name": "Rap", "duration": 4.625, "loop": false, "label": "RAP · 墨镜踩拍" }
   ],
   "locomotionTransition": 0.15,
   "locomotion": {

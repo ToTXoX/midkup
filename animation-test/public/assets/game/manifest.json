@@ -86,8 +86,8 @@
     },
     {
       "path": "characters/dawn/dawn.glb",
-      "bytes": 2093904,
-      "sha256": "75214037cfc607b5d7ff1be2201bcb0b438fb6eae65d754b8fa0b1b18de53f64",
+      "bytes": 2259072,
+      "sha256": "3024ac31475f80a5cfc21a2b45a93e81d931e3df74164e3f0525083148467603",
       "meshes": 36,
       "primitives": 44,
       "triangles": 85423,
@@ -95,14 +95,17 @@
         "Idle",
         "Walk",
         "Run",
-        "IronShoulder"
+        "IronShoulder",
+        "Basketball",
+        "Jump",
+        "Rap"
       ],
       "colorPrimitives": 0
     },
     {
       "path": "characters/dawn/animations.json",
-      "bytes": 554,
-      "sha256": "db3c48b437763c3394ea1ad9e7b77e15deaa3abafcbe38532318d40c007089aa"
+      "bytes": 1054,
+      "sha256": "5379abe6027402e7d2f7a956aa8f8c6157f680f93ab0c4eb609b9032535d12bc"
     },
     {
       "path": "environments/garden.glb",
@@ -211,8 +214,8 @@
     },
     {
       "path": "gameplay/target-feedback.js",
-      "bytes": 2647,
-      "sha256": "90b41840335467a61f1297564a97e121724c7a615920db8a8d94a57043bc444e"
+      "bytes": 2673,
+      "sha256": "3d55bfdfa1763c990d0887b505abeeec73ffd9f4cb3df2a9ece2c55a0c2771a5"
     },
     {
       "path": "gameplay/water-skill-input.js",

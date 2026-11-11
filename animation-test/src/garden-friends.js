@@ -98,7 +98,7 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
     pivot.add(guest);
     object.add(pivot);
     const { bounds, center, size, standingRadius } = body;
-    const knockdownRig = createKnockdownRig(guest, pivot, center);
+    const knockdownRig = createKnockdownRig(guest, pivot, center, { quadruped: id === 'mudkip' });
     const aim = center.clone();
     aim.y = bounds.min.y + size.y * .58;
     const colliders = [];
@@ -178,25 +178,37 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
     const away = new Vector3().subVectors(origin, actor.position).setY(0);
     if (away.lengthSq() < 1e-6) away.copy(direction).setY(0);
     away.normalize();
-    let footprint = guest.body.tumbleRadius;
-    const landing = origin.clone().addScaledVector(away, footprint - guest.radius + .002);
-    const ground = preview.groundHeight(landing.x, landing.z);
-    const clearance = footprint + navigation.settings.actorRadius + navigation.settings.skin;
-    const clearOfPlayer = [actor.position, spawn].every(p => Math.hypot(p.x - landing.x, p.z - landing.z) >= clearance);
-    if (ground !== null && clearOfPlayer && navigation.canFitVisitor(landing, footprint, guest.targetId)) {
-      landing.y = ground + .005;
-    } else {
-      landing.copy(origin);
-      footprint = guest.radius;
-    }
+    const fall = findFallSpace(guest, away);
+    const landing = fall?.landing ?? origin.clone();
+    const footprint = fall ? guest.body.tumbleRadius : guest.radius;
     const localYaw = -guest.object.rotation.y;
     const offset = landing.clone().sub(origin).applyAxisAngle(up, localYaw);
+    const localDirection = (fall?.direction ?? away).applyAxisAngle(up, localYaw);
     guest.knockdownRig?.begin();
     guest.rest();
     guest.reaction = null;
-    const motion = createKnockdownMotion(guest.body, away.applyAxisAngle(up, localYaw), offset, footprint, guest.knockdownRig);
+    const motion = createKnockdownMotion(guest.body, localDirection, offset, guest.knockdownRig, !fall);
     guest.knockdown = { landing, footprint, motion };
     syncColliders();
+  }
+
+  function findFallSpace(guest, away) {
+    const origin = guest.object.position;
+    const footprint = guest.body.tumbleRadius;
+    const clearance = footprint + playerRadius + navigation.settings.skin;
+    for (const turn of [0, -.60, .60, -1.20, 1.20]) {
+      const direction = away.clone().applyAxisAngle(up, turn);
+      const landing = origin.clone().addScaledVector(direction, footprint - guest.radius + .002);
+      if (Math.hypot(actor.position.x - landing.x, actor.position.z - landing.z) < clearance) continue;
+      if (!navigation.canFitVisitor(landing, footprint, guest.targetId)) continue;
+      if (navigation.sweepVisitor(origin, landing, guest.radius, guest.targetId).blockedBy) continue;
+      const ground = preview.groundHeight(landing.x, landing.z);
+      if (ground !== null) {
+        landing.y = ground + .005;
+        return { landing, direction };
+      }
+    }
+    return null;
   }
 
   function knockBack(guest, direction) {
@@ -396,9 +408,9 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
       guest.lastHit = skill;
       if (guest.knockdown) return `${guest.name} 还在爬起来。`;
       const wasPushed = !!guest.reaction?.push;
-      if (skill === 'tackle') {
+      if (skill === 'tackle' || skill === 'basketball') {
         knockDown(guest, direction);
-        return `${guest.name} 被撞倒了！`;
+        return skill === 'basketball' ? `篮球命中，${guest.name} 倒地了！` : `${guest.name} 被撞倒了！`;
       }
       const pushDirection = direction.clone().setY(0).normalize();
       const impulse = pushDirection.clone().applyAxisAngle(up, -guest.object.rotation.y);

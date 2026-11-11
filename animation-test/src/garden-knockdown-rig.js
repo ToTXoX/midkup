@@ -3,7 +3,7 @@ import { MathUtils, Matrix4, Quaternion, Vector3 } from 'three';
 const horizontal = new Vector3(1, 0, 0);
 const boneKey = name => name.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^mixamorig/, '');
 
-export function createKnockdownRig(model, pivot, center) {
+export function createKnockdownRig(model, pivot, center, { quadruped = false } = {}) {
   const bones = new Map();
   const sampleMeshes = [];
   const facing = pivot.getWorldQuaternion(new Quaternion());
@@ -19,7 +19,7 @@ export function createKnockdownRig(model, pivot, center) {
     }
     if (!node.isMesh) return;
     const count = node.geometry.getAttribute('position')?.count ?? 0;
-    const stride = Math.max(1, Math.floor(count / 84));
+    const stride = Math.max(1, Math.floor(count / (quadruped ? 360 : 84)));
     sampleMeshes.push({ node, count, stride });
     pointCount += Math.ceil(count / stride);
   });
@@ -27,7 +27,7 @@ export function createKnockdownRig(model, pivot, center) {
 
   const joints = [...bones.values()];
   const sides = [[1, 'l', 'left'], [-1, 'r', 'right']].map(([sign, short, long]) => {
-    const limb = (...names) => names.map(name => bones.get(name + short) ?? bones.get(long + name)).find(Boolean);
+    const limb = (...names) => names.map(name => bones.get(name + short) ?? bones.get(short + name) ?? bones.get(long + name)).find(Boolean);
     return {
       sign, upper: limb('upperarm', 'arm'), elbow: limb('forearm', 'lowerarm'), hand: limb('hand', 'wrist'),
       thigh: limb('thigh', 'upleg', 'upperleg'), shin: limb('shin', 'leg', 'lowerleg'), foot: limb('boot', 'foot'),
@@ -35,6 +35,19 @@ export function createKnockdownRig(model, pivot, center) {
   });
   const chest = bones.get('chest') ?? bones.get('spine2');
   const head = bones.get('head');
+  const tail = bones.get('tail1');
+  const tailTip = bones.get('tail2');
+  const restFacing = facing.clone().invert();
+  const paws = quadruped ? sides.flatMap(({ sign, upper, elbow, hand, thigh, shin, foot }) => [
+    { sign, fore: true, start: upper, joint: elbow, end: hand },
+    { sign, fore: false, start: thigh, joint: shin, end: foot },
+  ]).filter(({ start, joint, end }) => start && joint?.node.parent === start.node && end?.node.parent === joint.node)
+    .map(paw => ({
+      ...paw,
+      rest: pivot.worldToLocal(paw.end.node.getWorldPosition(new Vector3())),
+      restRotation: restFacing.clone().multiply(paw.end.node.getWorldQuaternion(new Quaternion())),
+      target: new Vector3(), contact: 0,
+    })) : [];
   const rotation = new Quaternion();
   const blendRotation = new Quaternion();
   const localAxis = new Vector3();
@@ -49,6 +62,7 @@ export function createKnockdownRig(model, pivot, center) {
   const wristPoint = new Vector3();
   const towardWrist = new Vector3();
   const elbowPlane = new Vector3();
+  const pawRotation = new Quaternion();
 
   function reset() {
     for (const bone of joints) {
@@ -98,6 +112,56 @@ export function createKnockdownRig(model, pivot, center) {
     return points;
   }
 
+  function solveLimb(upper, elbow, hand, point) {
+    pivot.updateWorldMatrix(true, false);
+    inversePivot.copy(pivot.matrixWorld).invert();
+    upper.node.getWorldPosition(shoulderPoint).applyMatrix4(inversePivot);
+    elbow.node.getWorldPosition(elbowPoint).applyMatrix4(inversePivot);
+    hand.node.getWorldPosition(wristPoint).applyMatrix4(inversePivot);
+    const upperLength = elbowPoint.distanceTo(shoulderPoint);
+    const forearmLength = wristPoint.distanceTo(elbowPoint);
+    towardWrist.copy(point).applyMatrix4(inversePivot.copy(pivot.matrix).invert()).sub(shoulderPoint);
+    const reach = towardWrist.length();
+    if (reach < 1e-6 || upperLength < 1e-6 || forearmLength < 1e-6) return false;
+    const span = MathUtils.clamp(reach, Math.abs(upperLength - forearmLength) + .00001, .999 * (upperLength + forearmLength));
+    towardWrist.divideScalar(reach);
+    elbowPlane.subVectors(elbowPoint, shoulderPoint);
+    elbowPlane.addScaledVector(towardWrist, -elbowPlane.dot(towardWrist));
+    if (elbowPlane.lengthSq() < 1e-9) return false;
+    const along = (upperLength ** 2 - forearmLength ** 2 + span ** 2) / (2 * span);
+    const bend = Math.sqrt(Math.max(0, upperLength ** 2 - along ** 2));
+    elbowPoint.copy(shoulderPoint).addScaledVector(towardWrist, along).addScaledVector(elbowPlane.normalize(), bend);
+    wristPoint.copy(shoulderPoint).addScaledVector(towardWrist, span);
+    aimAt(upper, elbow, elbowPoint);
+    aimAt(elbow, hand, wristPoint);
+    return true;
+  }
+
+  function groundRecovery(age, supportSide, offset, place) {
+    for (const paw of paws) {
+      const near = paw.sign === supportSide;
+      const land = paw.fore ? (near ? 1.01 : 1.13) : (near ? 1.26 : 1.39);
+      const weight = MathUtils.smoothstep(age, land, land + .17);
+      const position = pivot.parent.worldToLocal(paw.end.node.getWorldPosition(paw.target));
+      target.copy(paw.rest).add(offset);
+      position.lerp(target, weight);
+      if (!paw.fore) position.y += .028 * Math.sin(Math.PI * weight);
+      const clearance = position.y - target.y;
+      paw.contact = Math.max(weight, 1 - MathUtils.smoothstep(clearance, 0, .025));
+      position.y = Math.max(position.y, target.y);
+    }
+    // Fitting the silhouette to the floor can move the hips. Reapply the same paw targets afterward.
+    for (let pass = 0; pass < 2; pass++) {
+      for (const paw of paws) {
+        if (!paw.contact || !solveLimb(paw.start, paw.joint, paw.end, paw.target)) continue;
+        paw.end.node.parent.getWorldQuaternion(worldRotation).invert().multiply(facing);
+        pawRotation.copy(worldRotation).multiply(paw.restRotation);
+        paw.end.node.quaternion.slerp(pawRotation, paw.contact);
+      }
+      if (pass === 0) place(supportPoints());
+    }
+  }
+
   return {
     begin() {
       pivot.parent.getWorldQuaternion(facing);
@@ -108,6 +172,7 @@ export function createKnockdownRig(model, pivot, center) {
       }
     },
     reset,
+    groundRecovery: paws.length === 4 ? groundRecovery : null,
     palmPosition(side, result) {
       const hand = sides[side > 0 ? 0 : 1].hand;
       return hand ? pivot.parent.worldToLocal(hand.node.getWorldPosition(result)) : null;
@@ -115,30 +180,9 @@ export function createKnockdownRig(model, pivot, center) {
     bracePalm(side, palm) {
       const { upper, elbow, hand } = sides[side > 0 ? 0 : 1];
       if (!upper || !elbow || !hand || elbow.node.parent !== upper.node || hand.node.parent !== elbow.node) return null;
-      pivot.updateWorldMatrix(true, false);
-      inversePivot.copy(pivot.matrixWorld).invert();
-      upper.node.getWorldPosition(shoulderPoint).applyMatrix4(inversePivot);
-      elbow.node.getWorldPosition(elbowPoint).applyMatrix4(inversePivot);
-      hand.node.getWorldPosition(wristPoint).applyMatrix4(inversePivot);
-      const upperLength = elbowPoint.distanceTo(shoulderPoint);
-      const forearmLength = wristPoint.distanceTo(elbowPoint);
-      towardWrist.copy(palm).applyMatrix4(inversePivot.copy(pivot.matrix).invert()).sub(shoulderPoint);
-      const reach = towardWrist.length();
-      if (reach < 1e-6 || upperLength < 1e-6 || forearmLength < 1e-6) return null;
-      const span = MathUtils.clamp(reach, Math.abs(upperLength - forearmLength) + .00001, .999 * (upperLength + forearmLength));
-      towardWrist.divideScalar(reach);
-      elbowPlane.subVectors(elbowPoint, shoulderPoint);
-      elbowPlane.addScaledVector(towardWrist, -elbowPlane.dot(towardWrist));
-      if (elbowPlane.lengthSq() < 1e-9) return null;
-      const along = (upperLength ** 2 - forearmLength ** 2 + span ** 2) / (2 * span);
-      const bend = Math.sqrt(Math.max(0, upperLength ** 2 - along ** 2));
-      elbowPoint.copy(shoulderPoint).addScaledVector(towardWrist, along).addScaledVector(elbowPlane.normalize(), bend);
-      wristPoint.copy(shoulderPoint).addScaledVector(towardWrist, span);
-      aimAt(upper, elbow, elbowPoint);
-      aimAt(elbow, hand, wristPoint);
-      return supportPoints();
+      return solveLimb(upper, elbow, hand, palm) ? supportPoints() : null;
     },
-    pose({ age, axis, supportSide, flail, tuck, brace, push, nod }) {
+    pose({ age, axis, supportSide, flail, tuck, brace, push, nod, quadruped }) {
       pivot.position.set(0, 0, 0);
       pivot.quaternion.identity();
       pivot.scale.setScalar(1);
@@ -147,6 +191,12 @@ export function createKnockdownRig(model, pivot, center) {
       rotate(chest, horizontal, .21 * brace - .09 * flail);
       rotate(head, horizontal, nod);
       rotate(head, axis, -.19 * flail + .12 * tuck - .12 * push);
+      if (quadruped) {
+        const roll = MathUtils.smoothstep(age, .71, 1.03) * (1 - MathUtils.smoothstep(age, 1.40, 1.82));
+        rotate(tail, horizontal, .23 * roll - .045 * push);
+        rotate(tailTip, horizontal, .19 * roll);
+        rotate(chest, horizontal, .12 * brace - .11 * push);
+      }
       for (const { sign, upper, elbow, hand, thigh, shin, foot } of sides) {
         const near = sign === supportSide;
         const legBend = tuck * (near ? .85 : 1.14);

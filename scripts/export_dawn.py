@@ -1,6 +1,6 @@
 """Export Dawn's rig and in-place animation clips from dawn-character.blend."""
 
-from math import cos, pi, radians, sin, tau
+from math import cos, pi, radians, sin, sqrt, tau
 from pathlib import Path
 import sys
 
@@ -40,6 +40,30 @@ def aim(name, direction, weight):
     transform = Quaternion().slerp(turn, weight).to_matrix().to_4x4()
     bone.matrix = Matrix.Translation(head) @ transform @ Matrix.Translation(-head) @ bone.matrix
     bpy.context.view_layer.update()
+
+
+def posed_point(name, point):
+    bone = rig.pose.bones[name]
+    return bone.matrix @ (bone.bone.matrix_local.inverted() @ Vector(point))
+
+
+def reach_wrist(side, wrist, outward, weight):
+    upper = rig.pose.bones[f"Upper Arm.{side}"]
+    lower = rig.pose.bones[f"Forearm.{side}"]
+    shoulder = upper.head.copy()
+    direction = wrist - shoulder
+    reach = direction.length
+    direction.normalize()
+    a = upper.bone.length
+    b = lower.bone.length
+    span = max(abs(a - b) + .001, min(reach, a + b - .001))
+    along = (a*a - b*b + span*span) / (2 * span)
+    bend = sqrt(max(0, a*a - along*along))
+    plane = Vector(outward)
+    plane -= direction * plane.dot(direction)
+    elbow = shoulder + direction * along + plane.normalized() * bend
+    aim(f"Upper Arm.{side}", elbow - shoulder, weight)
+    aim(f"Forearm.{side}", shoulder + direction * span - elbow, weight)
 
 
 def smooth(value):
@@ -120,6 +144,105 @@ def iron_shoulder(phase):
         aim(f"Forearm.{side}", (-sign * .18, -.31 + .18 * thrust, .13 - .19 * thrust), .89 * stance)
 
 
+def basketball(phase):
+    time = phase * 2.375
+    ready = smooth(time / .27)
+    settle = smooth((time - 2.02) / .355)
+    first = smooth((time - .27) / .355)
+    second = smooth((time - .625) / .355)
+    spin = smooth((time - 1.02) / .55)
+    gather = smooth((time - 1.0) / .17)
+    windup = smooth((time - 1.53) / .22)
+    shoot = smooth((time - 1.73) / .145)
+    dip = sin(pi * first) + sin(pi * second)
+    load = ready * (1 - shoot)
+    sway = .16 * (ready - 2 * first + 2 * second) * (1 - gather)
+    translate("Pelvis", (sway, -.055 * load, -.10 * load - .11 * dip + .055 * shoot * (1 - settle)))
+    rotate("Spine", (1, 0, 0), .14 * load + .17 * dip - .09 * shoot * (1 - settle))
+    rotate("Chest", (0, 1, 0), -sway * .82 + .13 * windup * (1 - settle))
+    rotate("Head", (1, 0, 0), .12 * dip - .17 * shoot * (1 - settle))
+    translate("Shoulder.R", (0, -.23 * shoot * (1 - settle), .06 * shoot * (1 - settle)))
+    for side, sign in (("L", 1), ("R", -1)):
+        stepping = smooth((time - (1.05 if side == "R" else 1.28)) / .23)
+        foot_lift = sin(pi * stepping)
+        width = .10 * load + .09 * dip
+        translate(f"Foot IK.{side}", (sign * (width + .16 * foot_lift),
+                                       sign * (.10 * load + .10 * foot_lift), .10 * foot_lift))
+        rotate(f"Foot IK.{side}", (0, 0, 1), -sign * (.17 * load + .28 * foot_lift))
+    bpy.context.view_layer.update()
+    for side, sign, pass_out, pass_in in (("R", -1, first, second), ("L", 1, second, first)):
+        handling = ready - first + second if side == "R" else first - second
+        press = sin(pi * pass_out)
+        receive = sin(pi * pass_in)
+        arm = ready * (1 - settle)
+        turn = gather * (1 - windup)
+        release = shoot if side == "R" else .37 * shoot
+        aim(f"Upper Arm.{side}", (sign * (.37 - .24 * gather), -.22 - .27 * turn - .38 * release,
+                                  -.27 - .24 * press + .42 * windup + .36 * release), arm)
+        aim(f"Forearm.{side}", (-sign * (.23 + .16 * gather), -.39 - .10 * handling - .25 * release,
+                                .10 + .21 * handling - .37 * press + .11 * receive + .33 * windup), arm)
+        aim(f"Hand.{side}", (-sign * (.12 + .16 * gather), -.30,
+                             -.06 - .34 * press + .20 * windup - .20 * release), arm)
+    rotate("Root", (0, 0, 1), -tau * spin)
+
+
+def jump(phase):
+    time = phase * 1.25
+    takeoff, landing = .25, 11 / 12
+    air = max(0, min(1, (time - takeoff) / (landing - takeoff)))
+    height = 4 * 2.27 * air * (1 - air)
+    crouch = smooth(time / .16) * (1 - smooth((time - .16) / .09))
+    absorb = smooth((time - landing) / .082) * (1 - smooth((time - landing - .082) / .23))
+    spread = smooth((time - .22) / .25) * (1 - smooth((time - .67) / .28))
+    swing = sin(pi * air)
+    translate("Root", (0, 0, height))
+    translate("Pelvis", (0, .08 * (crouch + absorb), -.22 * crouch - .24 * absorb - .085 * swing))
+    rotate("Spine", (1, 0, 0), .22 * crouch + .25 * absorb - .11 * spread)
+    rotate("Head", (1, 0, 0), .10 * crouch + .16 * absorb - .14 * spread)
+    for side, sign in (("L", 1), ("R", -1)):
+        translate(f"Shoulder.{side}", (sign * .115 * spread, -.025 * spread, .032 * spread))
+        translate(f"Foot IK.{side}", (sign * .14 * swing, sign * .14 * swing, (.20 + sign * .05) * swing))
+        rotate(f"Foot IK.{side}", (1, 0, sign * .53), -.34 * swing)
+    bpy.context.view_layer.update()
+    for side, sign in (("L", 1), ("R", -1)):
+        wing = smooth((time - (.22 if sign > 0 else .235)) / .23) * (1 - smooth((time - .68) / .27))
+        arms = min(1, wing + .48 * crouch + .62 * absorb)
+        aim(f"Upper Arm.{side}", (sign * (.25 + .59 * wing), .30 * crouch - .24 * absorb - .055 * wing,
+                                  -.57 + .62 * wing), arms)
+        aim(f"Forearm.{side}", (sign * (.22 + .53 * wing), .26 * crouch - .30 * absorb - .08 * wing,
+                                -.32 + .52 * wing), arms)
+        aim(f"Hand.{side}", (sign * .55, -.06, .035 + .13 * wing), wing)
+
+
+def rap(phase):
+    time = phase * 4.625
+    ready = smooth((time - .055) / .43) * (1 - smooth((time - 4.18) / .42))
+    rhythm = smooth((time - .39) / .18) * (1 - smooth((time - 4.05) / .26))
+    beats = (time - .5) / .5
+    sway = sin(pi * beats) * rhythm
+    bounce = max(0, cos(tau * beats)) ** 2 * rhythm
+    accent = max(0, cos(pi * (beats - .12))) ** 3 * rhythm
+    reach = smooth((time - .27) / .27) * (1 - smooth((time - 4.21) / .38))
+    adjust = sin(pi * smooth((time - .075) / .40))
+    translate("Pelvis", (.23 * sway, .037 * ready, -.095 * ready - .10 * bounce))
+    rotate("Spine", (0, 1, 0), -.12 * sway)
+    rotate("Chest", (0, 0, 1), .14 * sway + .11 * ready)
+    rotate("Head", (1, 0, 0), .13 * ready + .12 * bounce + .15 * adjust)
+    translate("Shoulder.L", (-.20 * ready, -.79 * ready, .33 * ready))
+    translate("Shoulder.R", (-.03 * reach, -.16 * reach - .075 * accent, .015 * reach))
+    for side, sign in (("L", 1), ("R", -1)):
+        translate(f"Foot IK.{side}", (sign * .08 * ready, 0, 0))
+        rotate(f"Foot IK.{side}", (0, 0, 1), -sign * .10 * ready)
+    bpy.context.view_layer.update()
+    wrist = posed_point("Head", (.34 + .28 * adjust, -1.68 + .17 * adjust, 2.94 + .29 * adjust))
+    mitten = posed_point("Head", (.03 + .32 * adjust, -2.04 + .25 * adjust, 3.07 + .32 * adjust))
+    reach_wrist("L", wrist, (.85, .18, -.52), ready)
+    aim("Hand.L", mitten - rig.pose.bones["Hand.L"].head, ready)
+    aim("Upper Arm.R", (-.35 + .11 * sway, -.84 - .24 * accent, .025 + .19 * accent), reach)
+    aim("Forearm.R", (-.16 - .11 * sway, -.85 - .33 * accent, .17 - .10 * accent), reach)
+    aim("Hand.R", (-.045, -.70, .14 - .10 * accent), reach)
+
+
 def reset_pose():
     for bone in rig.pose.bones:
         bone.rotation_mode = "QUATERNION"
@@ -155,6 +278,15 @@ actions = [
     make_action("Run", 1 / 3, lambda phase: gait(phase, .56, .38, .27, .28, .67, .12), gait_bones),
     make_action("IronShoulder", 1.25, iron_shoulder, ("Pelvis", "Spine", "Chest", "Head") + tuple(
         f"{part}.{side}" for side in ("L", "R") for part in ("Shoulder", "Foot IK", "Upper Arm", "Forearm")
+    )),
+    make_action("Basketball", 2.375, basketball, ("Root", "Pelvis", "Spine", "Chest", "Head", "Shoulder.R") + tuple(
+        f"{part}.{side}" for side in ("L", "R") for part in ("Foot IK", "Upper Arm", "Forearm", "Hand")
+    )),
+    make_action("Jump", 1.25, jump, ("Root", "Pelvis", "Spine", "Head") + tuple(
+        f"{part}.{side}" for side in ("L", "R") for part in ("Foot IK", "Shoulder", "Upper Arm", "Forearm", "Hand")
+    )),
+    make_action("Rap", 4.625, rap, ("Pelvis", "Spine", "Chest", "Head") + tuple(
+        f"{part}.{side}" for side in ("L", "R") for part in ("Foot IK", "Shoulder", "Upper Arm", "Forearm", "Hand")
     )),
 ]
 for action in actions:

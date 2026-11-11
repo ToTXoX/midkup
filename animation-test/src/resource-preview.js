@@ -177,7 +177,7 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
   function surfaceNormal(contact){
     return contact.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(contact.object.matrixWorld)).normalize();
   }
-  function traceMud(from,to){
+  function traceGardenProjectile(from,to){
     environment.updateWorldMatrix(true,true);
     const hit=projectileContact(from,to,[environment]);
     if(!hit)return null;
@@ -368,6 +368,6 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
   }
   return {layout,stats,bounds,fitPoints,extraColliders,groundHeight,hitGround,footprintSurface,meadow,windChime,pondWater,swimContacts,
     setVisitors(value){visitors=value;},visitorName:id=>visitors?.targetName(id),setPlayerModel(value){playerModel=value;},
-    pickAim,targetPoint,tackleTargetContact,traceMud,targetFeedback,foodContact,basketInfo,beginGardenMeal,orchard,get foodType(){return foodType;},traceWater:(origin,forward)=>resolveImpact(origin,forward.clone().multiplyScalar(WATER_SPEED),WATER_GRAVITY),
+    pickAim,targetPoint,tackleTargetContact,traceGardenProjectile,targetFeedback,foodContact,basketInfo,beginGardenMeal,orchard,get foodType(){return foodType;},traceWater:(origin,forward)=>resolveImpact(origin,forward.clone().multiplyScalar(WATER_SPEED),WATER_GRAVITY),
     setView,get view(){return view;},update,onActionChange,debug:()=>({view,pond:pondWater.debug(),mouth:position.toArray(),direction:direction.toArray(),food:food.visible,eating:{phase:eatPhase,crumbs:foodFX.visible?crumbs.filter(o=>o.visible).length:0,hearts:foodFX.visible?happyHearts.filter(o=>o.visible).length:0},orb:false,water:water.debug().stream,waterEffect:water.debug()}),environment};
 }

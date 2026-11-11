@@ -27,7 +27,7 @@ export function createTargetFeedback(records){
     update(delta){for(const e of entries){
       e.age+=delta;
       const t=Math.max(0,e.age-e.hold),envelope=Math.exp(-7*t),strength=e.record.id==='heavy'?.10:.24;
-      const water=e.kind==='water',force=water?1.48:e.kind==='tackle'?1.7:.50;
+      const water=e.kind==='water',force=water?1.48:e.kind==='tackle'?1.7:e.kind==='basketball'?1.2:.50;
       const swing=t<.8?force*strength*Math.sin((water?23:19)*t)*envelope:0;
       e.pivot.rotation.x=e.direction.z*swing;
       e.pivot.rotation.z=-e.direction.x*swing;

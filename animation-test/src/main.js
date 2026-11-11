@@ -11,6 +11,9 @@ import { createDestinationMarker } from './destination-marker.js';
 import { createGardenCombat } from './garden-combat.js';
 import { createGardenTackle } from './garden-tackle.js';
 import { createGardenIronShoulder } from './garden-iron-shoulder.js';
+import { createGardenBasketball } from './garden-basketball.js';
+import { createDawnJumpEffect } from './dawn-jump-effect.js';
+import { createDawnRap } from './dawn-rap.js';
 import { createTackleEffects } from './tackle-effects.js';
 import { createGardenMud } from './garden-mud.js';
 import { createMudEffects } from './mud-effects.js';
@@ -58,8 +61,12 @@ let clipSettings = new Map(metadata.clips.map((c)=>[c.name,c]));
 const locomotion = (name) => metadata.locomotion?.[name];
 let resourcePreview, stageRoster, gardenFriends;
 let navigation,gardenWalker,combat,skillInput,skillAimBefore,swimming,footprints;
-let tackle,tackleEffects,mud,mudEffects,iron,ironAim=null;
-const groundSkillActive=()=>!!(tackle?.active||mud?.active||iron?.active);
+let tackle,tackleEffects,mud,mudEffects,iron,basketball,jumpEffect,rap,guestAim=null;
+let jumpCooldown=0,rapCooldown=0;
+const jumpCooldownDuration=3;
+const rapCooldownDuration=7;
+const dawnPerformancePlaying=()=>currentName==='Jump'||currentName==='Rap';
+const groundSkillActive=()=>!!(tackle?.active||mud?.active||iron?.active||basketball?.active||dawnPerformancePlaying());
 let gardenMeal=null,mealsEaten=0;
 const gardenDances=['DanceA','DanceB','DanceC'];
 let danceBag=[],lastGardenDance=null,pendingGardenDance=null,completedGardenDances=0;
@@ -70,6 +77,7 @@ const danceAnchor = new THREE.Vector3();
 let danceHead;
 let waterFramed = false;
 let tailDanceFramed = false;
+let jumpFramed = false;
 let eyeExpressions=null;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#e6eee6');
@@ -212,11 +220,12 @@ function resetView() {
     return;
   }
   if(resourceMode&&mobile){
-    const top=document.querySelector('.view-hint').getBoundingClientRect().bottom+12;
+    const hintBottom=document.querySelector('.view-hint').getBoundingClientRect().bottom;
+    const top=(jumpFramed?Math.max(hintBottom,$('enter-garden').getBoundingClientRect().bottom):hintBottom)+12;
     const bottom=document.querySelector('.controls').getBoundingClientRect().top-12;
     const available=Math.max(120,bottom-top);
-    const distance=innerHeight*.95/(2*halfFovTan(camera.fov)*available);
-    controls.target.set(0,.43,0);
+    const distance=innerHeight*(jumpFramed?1.48:.95)/(2*halfFovTan(camera.fov)*available);
+    controls.target.set(0,jumpFramed?.70:.43,0);
     camera.position.copy(controls.target).addScaledVector((tailDanceFramed?new THREE.Vector3(2.45,.85,2.55):new THREE.Vector3(1.55,.85,3.25)).normalize(),distance);
     camera.setViewOffset(innerWidth,innerHeight,0,innerHeight/2-(top+bottom)/2,innerWidth,innerHeight);
     controls.maxDistance=Math.max(10,distance*1.5);
@@ -291,6 +300,15 @@ let activeCharacter = 'mudkip';
 const isZuzu = () => activeCharacter === 'mudkip';
 let actions = new Map();
 const hasIronShoulder=()=>actions.has('IronShoulder');
+const hasBasketball=()=>actions.has('Basketball');
+const hasJump=()=>actions.has('Jump');
+const hasRap=()=>actions.has('Rap');
+const canAimGuestSkill=()=>hasIronShoulder()||hasBasketball();
+const basketballLabels={dribble:'运球',turn:'转身',shoot:'投篮',flight:'投篮',recover:'收势'};
+const jumpEvent=name=>clipSettings.get('Jump').events.find(event=>event.event===name).time;
+const jumpPhase=()=>currentName!=='Jump'?'idle':active.time<jumpEvent('jump_takeoff')?'crouch':
+  active.time<jumpEvent('jump_land')?'air':'land';
+const jumpLabels={crouch:'蓄力',air:'展翅',land:'落地'};
 const state = { loaded: false, paused: false, rate: 1, waterRate: 1, movement: false, travelGait:'Run', transitions: 0 };
 const labels = { Idle: '待机 · 轻轻呼吸', Walk: '走路 · 小步慢走', PetReaction: '摸头 · 开心摇尾' };
 if(resourceMode)Object.assign(labels,{Walk:'走路 · 轻快小步',Run:'小跑 · 蹬地轻跳',Eat:'进食 · 低头咀嚼',WaterCharge:'蓄力 · 稳住身体',WaterShoot:'喷水 · 张嘴发射',Swim:'游泳 · 划水摆尾',SwimIdle:'漂浮 · 轻轻踩水',DanceA:'跳舞 · 摇摇踏踏舞',DanceB:'跳舞 · 扭扭尾巴舞',DanceC:'庆祝 · 转圈庆祝舞'});
@@ -453,7 +471,9 @@ function stopGardenActions(){
   tackle?.reset();
   mud?.reset();
   iron?.cancel();
-  ironAim=null;
+  basketball?.cancel();
+  if(dawnPerformancePlaying())playClip('Idle',{immediate:true});
+  guestAim=null;
   footprints?.reset();
   cancelGardenMeal();
   skillInput?.cancel();
@@ -501,7 +521,7 @@ function createPlayback(gltf, config) {
   return { model: gltf.scene, mixer: player, actions: clips, metadata: config, clipSettings: settings };
 }
 
-const stageHint = () => hasIronShoulder() ? '待机时挥手 · 可逐帧查看走路和小跑。' : '十二段动作 · 可以逐帧查看。';
+const stageHint = () => hasBasketball() ? '待机时挥手 · 动作可逐帧查看。' : '十二段动作 · 可以逐帧查看。';
 const characterPortraits = {
   mudkip: 'mudkip-avatar-user-v1.png',
   dawn: 'dawn-avatar.png',
@@ -647,14 +667,16 @@ function setupStageRoster(characters, loadCharacter) {
 
 function syncGardenPlayer(garden) {
   const guest = garden && !isZuzu();
-  document.body.classList.toggle('guest-control', guest);
-  $('garden-score').hidden = !garden || guest && !hasIronShoulder();
-  for (const id of ['garden-fire', 'garden-mud', 'garden-tackle', 'skill-caption']) $(id).hidden = guest;
+  $('garden-score').hidden = !garden || guest && !canAimGuestSkill();
+  for (const id of ['garden-water-slot', 'garden-mud', 'garden-tackle']) $(id).hidden = guest;
   gardenDanceButton.hidden = guest;
   $('garden-iron').hidden = !guest || !hasIronShoulder();
+  $('garden-basketball').hidden = !guest || !hasBasketball();
+  $('garden-jump').hidden = !guest || !hasJump();
+  $('garden-rap').hidden = !guest || !hasRap();
   $('garden-gait').hidden = guest && !(actions.has('Run') && locomotion('Run') && actions.has('Walk') && locomotion('Walk'));
   setHudText('garden-speaker', gardenFriends.controlledName);
-  renderer.domElement.setAttribute('aria-label', guest ? `庭院：点击草地移动 ${gardenFriends.controlledName}，点击角色瞄准，按铁山靠发动技能` : zuzuCanvasLabel);
+  renderer.domElement.setAttribute('aria-label', guest ? `庭院：点击草地移动 ${gardenFriends.controlledName}，点击角色或练习靶瞄准` : zuzuCanvasLabel);
   resourcePreview.setPlayerModel(model);
 }
 
@@ -721,6 +743,12 @@ function playClip(name, { immediate = false, force = false, completed = false,ga
   }
   active = next;
   currentName = name;
+  if (name !== 'Basketball' && !basketball?.active) basketball?.hide();
+  if (name !== 'Jump') jumpEffect?.hide();
+  if(name==='Rap'){
+    rap??=createDawnRap(scene);
+    if(navigator.userActivation?.hasBeenActive!==false)rap.enableSound();
+  }else rap?.hide();
   if (gardenDanceEffects) {
     const dancing = isGardenDancePlaying();
     gardenDanceEffects.hidden = !dancing;
@@ -731,9 +759,13 @@ function playClip(name, { immediate = false, force = false, completed = false,ga
   resourcePreview?.onActionChange(name,{completed,gameShot});
   combat?.onActionChange(name,{completed});
   if(resourceMode && resourcePreview?.view==='stage'){
+    const wasJumpFramed=jumpFramed;
+    jumpFramed=name==='Jump'||(completed&&jumpFramed);
+    const previewFrameChanged=(wasTailDanceFramed!==tailDanceFramed&&!completed)
+      ||(wasJumpFramed!==jumpFramed&&innerWidth<700);
     if(waterAction && !waterFramed){waterFramed=true;resetView();}
     else if(!waterAction && !completed && waterFramed){waterFramed=false;resetView();}
-    else if(wasTailDanceFramed!==tailDanceFramed&&!completed)resetView();
+    else if(previewFrameChanged)resetView();
   }
   const waterControls=resourceMode&&(waterFramed||waterAction);
   document.querySelector('label[for="rate"]').textContent=waterControls?'喷水播放速度':resourceMode?'走路 / 小跑步频':'走路步频';
@@ -769,6 +801,7 @@ function pet() {
 }
 function updatePauseUI() {
   if(state.paused)skillInput?.cancel();
+  else if(currentName==='Rap'&&navigator.userActivation?.hasBeenActive!==false)rap?.enableSound();
   gardenDanceEffects?.toggleAttribute('data-paused', state.paused);
   const label=state.paused?'继续':'暂停';$('pause').textContent=label;
   if($('garden-pause')){
@@ -814,11 +847,14 @@ function seek(time) {
   state.paused = true; updatePauseUI();
   for (const a of actions.values()) if (a !== active) a.stop();
   active.stopFading().setEffectiveWeight(1);
-  active.time = THREE.MathUtils.clamp(time, 0, active.getClip().duration - 1e-7);
-  mixer.update(0);
+  sampleActivePose(THREE.MathUtils.clamp(time, 0, active.getClip().duration - 1e-7));
   if(isZuzu())eyeExpressions?.update(currentName,active.time);
   model.updateMatrixWorld(true);
   updateTimeline();
+}
+function sampleActivePose(time) {
+  active.time = time;
+  mixer.update(0);
 }
 $('timeline').addEventListener('input', (e) => seek(Number(e.target.value) / 1000 * active.getClip().duration));
 function updateTimeline() {
@@ -832,7 +868,7 @@ function moveTo(point,{fromSwimming=false}={}) {
   cancelGardenDanceRequest();
   if(resourcePreview?.view==='garden'){
     cancelGardenMeal();
-    ironAim=null;
+    guestAim=null;
     skillInput?.cancel();
     combat?.setMode('move');combat?.cancel();updateCombatUI();
     if(isZuzu()&&!fromSwimming){const result=swimming?.request(resourcePreview.pondWater.swimTarget(point));if(result?.handled){state.paused=false;updatePauseUI();return result.plan;}}
@@ -907,7 +943,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     if(characterInFront(hits[0],aimed)){requestGardenDance();return;}
     if(!isZuzu()){
       if(aimed?.visitor)gardenFriends.greet(aimed.targetId);
-      if(aimed?.targetId&&hasIronShoulder()&&(aimed.visitor||resourcePreview.layout.targets.some(target=>target.id===aimed.targetId))){
+      if(aimed?.targetId&&canAimGuestSkill()&&(aimed.visitor||resourcePreview.layout.targets.some(target=>target.id===aimed.targetId))){
         aimGardenTarget(aimed.point,aimed.targetId);return;
       }
       if(aimed?.visitor)return;
@@ -941,10 +977,10 @@ function castWaterSkill(){
 function aimGardenTarget(point,id){
   if(!point||groundSkillActive())return;
   if(!isZuzu()){
-    if(!hasIronShoulder())return;
-    ironAim=id;
+    if(!canAimGuestSkill())return;
+    guestAim=id;
     stopTravel();playClip('Idle');
-    gardenFeedback(`已锁定 ${gardenFriends.targetName(id)??'练习靶'}，点按铁山靠。`);
+    gardenFeedback(`已锁定 ${gardenFriends.targetName(id)??'练习靶'}。`);
     updateCombatUI();
     return;
   }
@@ -978,7 +1014,7 @@ const castMud=()=>castGroundSkill(mud);
 
 function castIronShoulder(){
   if(resourcePreview?.view!=='garden'||!hasIronShoulder()||state.paused||groundSkillActive()||!iron?.ready)return false;
-  const aim=ironAim?resourcePreview.targetPoint(ironAim):null;
+  const aim=guestAim?resourcePreview.targetPoint(guestAim):null;
   if(!iron.start(aim))return false;
   stopTravel();clearHearts();
   tackleEffects.enableBeatSound();
@@ -987,10 +1023,44 @@ function castIronShoulder(){
   return true;
 }
 
+function castBasketball(){
+  if(resourcePreview?.view!=='garden'||!hasBasketball()||state.paused||groundSkillActive()||!basketball?.ready)return false;
+  const aim=guestAim?resourcePreview.targetPoint(guestAim):null;
+  if(!basketball.start(aim,guestAim))return false;
+  stopTravel();clearHearts();
+  playClip('Basketball',{immediate:true,force:true});
+  updateCombatUI();
+  return true;
+}
+
+function castJump(){
+  if(resourcePreview?.view!=='garden'||!hasJump()||state.paused||groundSkillActive()||jumpCooldown>0)return false;
+  stopTravel();clearHearts();
+  jumpCooldown=jumpCooldownDuration;
+  playClip('Jump',{immediate:true,force:true});
+  gardenFeedback('起跳展翅！');
+  updateCombatUI();
+  return true;
+}
+
+function castRap(){
+  if(resourcePreview?.view!=='garden'||!hasRap()||state.paused||groundSkillActive()||rapCooldown>0)return false;
+  stopTravel();clearHearts();
+  rapCooldown=rapCooldownDuration;
+  playClip('Rap',{immediate:true,force:true});
+  gardenFeedback('Yo！跟着节拍摇起来。');
+  updateCombatUI();
+  return true;
+}
+
 function updateCombatUI(){
   if(!combat)return;
   const info=combat.debug(),garden=resourcePreview.view==='garden'&&isZuzu(),busy=info.phase!=='idle';
   const ironGarden=resourcePreview.view==='garden'&&hasIronShoulder();
+  const basketballGarden=resourcePreview.view==='garden'&&hasBasketball();
+  const jumpGarden=resourcePreview.view==='garden'&&hasJump();
+  const rapGarden=resourcePreview.view==='garden'&&hasRap();
+  const guestSkillGarden=ironGarden||basketballGarden;
   const tackling=!!tackle?.active;
   const groundBusy=groundSkillActive();
   const gesture=skillInput?.debug()??{active:false,dragging:false,offset:[0,0]};
@@ -1009,12 +1079,33 @@ function updateCombatUI(){
   $('garden-tackle').disabled=groundDisabled;
   $('garden-mud').disabled=groundDisabled||!mud?.ready;
   const ironButton=$('garden-iron');
-  ironButton.disabled=!ironGarden||state.paused||!iron?.ready;
+  ironButton.disabled=!ironGarden||state.paused||groundBusy||!iron?.ready;
   if(ironGarden){
     const {phase}=iron.debug();
     ironButton.setAttribute('aria-busy',String(iron.active));
     ironButton.style.setProperty('--cooldown',`${(1-iron.cooldownRatio)*360}deg`);
     setHudText('iron-title',phase==='charge'?'蓄力':phase==='dash'?'靠击':phase==='recover'?'收势':iron.ready?'铁山靠':`${Math.ceil(iron.cooldown)}s`);
+  }
+  const basketballButton=$('garden-basketball');
+  basketballButton.disabled=!basketballGarden||state.paused||groundBusy||!basketball?.ready;
+  if(basketballGarden){
+    basketballButton.setAttribute('aria-busy',String(basketball.active));
+    basketballButton.style.setProperty('--cooldown',`${(1-basketball.cooldownRatio)*360}deg`);
+    setHudText('basketball-title',basketballLabels[basketball.phase]??(basketball.ready?'篮球':`${Math.ceil(basketball.cooldown)}s`));
+  }
+  const jumpButton=$('garden-jump');
+  jumpButton.disabled=!jumpGarden||state.paused||groundBusy||jumpCooldown>0;
+  if(jumpGarden){
+    jumpButton.setAttribute('aria-busy',String(currentName==='Jump'));
+    jumpButton.style.setProperty('--cooldown',`${(1-jumpCooldown/jumpCooldownDuration)*360}deg`);
+    setHudText('jump-title',jumpLabels[jumpPhase()]??(jumpCooldown>0?`${Math.ceil(jumpCooldown)}s`:'跳'));
+  }
+  const rapButton=$('garden-rap');
+  rapButton.disabled=!rapGarden||state.paused||groundBusy||rapCooldown>0;
+  if(rapGarden){
+    rapButton.setAttribute('aria-busy',String(currentName==='Rap'));
+    rapButton.style.setProperty('--cooldown',`${(1-rapCooldown/rapCooldownDuration)*360}deg`);
+    setHudText('rap-title',currentName==='Rap'?'踩拍':rapCooldown>0?`${Math.ceil(rapCooldown)}s`:'RAP');
   }
   $('garden-tackle').dataset.busy=String(tackling);
   $('garden-tackle').setAttribute('aria-busy',String(tackling));
@@ -1030,16 +1121,16 @@ function updateCombatUI(){
   $('garden-fire').style.setProperty('--cooldown',`${busy&&info.phase==='shooting'?Math.min(1,active.time)*360:360}deg`);
   if(info.phase==='shooting'&&!info.lastContact)gardenFeedback(active.time<.33?'闭嘴蓄水…':active.time<.66?'水枪发射！':'水流正在飞向目标…');
   setHudText('garden-hit-count',String(resourcePreview.targetFeedback.debug().total).padStart(2,'0'));
-  const aimPoint=ironGarden&&ironAim?resourcePreview.targetPoint(ironAim):garden&&info.point?new THREE.Vector3().fromArray(info.point):null;
+  const aimPoint=guestSkillGarden&&guestAim?resourcePreview.targetPoint(guestAim):garden&&info.point?new THREE.Vector3().fromArray(info.point):null;
   $('aim-reticle').hidden=!aimPoint||groundBusy;
   if(aimPoint&&!groundBusy){
     const p=aimPoint.project(camera),visible=p.z<1&&p.z>-1&&Math.abs(p.x)<1&&Math.abs(p.y)<1;
     $('aim-reticle').hidden=!visible;
     $('aim-reticle').style.left=`${(p.x+1)*innerWidth/2}px`;$('aim-reticle').style.top=`${(1-p.y)*innerHeight/2}px`;
-    const ready=ironGarden?iron.ready:info.assessment?.reachable&&info.assessment?.clear;
+    const ready=guestSkillGarden?(ironGarden&&iron.ready)||(basketballGarden&&basketball.ready):info.assessment?.reachable&&info.assessment?.clear;
     $('aim-reticle').dataset.ready=String(ready);$('aim-reticle').dataset.firing=String(busy);
     const status=gesture.active?'松手喷水':info.assessment?.blocked?'被遮挡':!info.assessment?.reachable?'距离太远':info.targetId?'可命中':'已瞄准';
-    setHudText('aim-label',ironGarden?`${gardenFriends.targetName(ironAim)??'练习靶'} · 铁山靠`:`${info.targetName} · ${status}`);
+    setHudText('aim-label',guestSkillGarden?`${gardenFriends.targetName(guestAim)??'练习靶'} · 已锁定`:`${info.targetName} · ${status}`);
   }
   const hit=resourcePreview.targetFeedback.debug();
   const recent=hit.targets.filter(t=>t.hits&&t.age<.75).sort((a,b)=>a.age-b.age)[0];
@@ -1049,9 +1140,9 @@ function updateCombatUI(){
   if(garden&&waterHit){const p=resourcePreview.targetPoint(recent.id).add(new THREE.Vector3(0,.25+recent.age*.5,0)).project(camera);$('hit-pop').style.left=`${(p.x+1)*innerWidth/2}px`;$('hit-pop').style.top=`${(1-p.y)*innerHeight/2}px`;$('hit-pop').style.opacity=String(1-THREE.MathUtils.smoothstep(recent.age,.45,.75));}
   for(const b of document.querySelectorAll('[data-aim-target]')){
     const id=b.dataset.aimTarget,p=resourcePreview.targetPoint(id).project(camera);
-    b.hidden=!(garden||ironGarden)||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1;
+    b.hidden=!(garden||guestSkillGarden)||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1;
     b.style.left=`${(p.x+1)*innerWidth/2}px`;b.style.top=`${(1-p.y)*innerHeight/2}px`;
-    b.setAttribute('aria-pressed',String((ironGarden?ironAim:info.targetId)===id));
+    b.setAttribute('aria-pressed',String((guestSkillGarden?guestAim:info.targetId)===id));
     b.dataset.hits=hit.targets.find(t=>t.id===id).hits;
   }
 }
@@ -1060,9 +1151,12 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Space'&&e.target.tagName==='BUTTON'&&e.target.id!=='garden-fire')return;
   if(e.code==='Space'&&isZuzu()){e.preventDefault();if(!e.repeat&&!skillInput?.debug().active)castWaterSkill();}
   if(e.code==='Space'&&hasIronShoulder()){e.preventDefault();if(!e.repeat)castIronShoulder();}
+  if(e.code==='KeyB'&&hasBasketball()&&!e.altKey&&!e.ctrlKey&&!e.metaKey){e.preventDefault();if(!e.repeat)castBasketball();}
+  if(e.code==='KeyJ'&&hasJump()&&!e.altKey&&!e.ctrlKey&&!e.metaKey){e.preventDefault();if(!e.repeat)castJump();}
+  if(e.code==='KeyR'&&hasRap()&&!e.altKey&&!e.ctrlKey&&!e.metaKey){e.preventDefault();if(!e.repeat)castRap();}
   if(e.code==='Escape'){
     if(gardenFriends?.close(true))return;
-    setGardenMenu(false);skillInput?.cancel();if(!groundSkillActive()){combat.setMode('move');ironAim=null;}updateCombatUI();
+    setGardenMenu(false);skillInput?.cancel();if(!groundSkillActive()){combat.setMode('move');guestAim=null;}updateCombatUI();
   }
 });
 
@@ -1094,7 +1188,10 @@ window.__mudkipTest = {
   combat:()=>combat?{...combat.debug(),feedback:resourcePreview.targetFeedback.debug()}:null,
   skill:()=>skillInput?.debug(),
   tackle:()=>tackle?{...tackle.debug(),effects:tackleEffects.debug()}:null,
-  iron:()=>iron?{...iron.debug(),effects:tackleEffects.debug(),targetId:ironAim}:null,
+  iron:()=>iron?{...iron.debug(),effects:tackleEffects.debug(),targetId:guestAim}:null,
+  basketball:()=>basketball?{...basketball.debug(),targetId:guestAim}:null,
+  jump:()=>({phase:jumpPhase(),cooldown:jumpCooldown,lettering:jumpEffect?.debug()??null}),
+  rap:()=>({active:currentName==='Rap',cooldown:rapCooldown,glasses:false,pointing:false,sound:false,...rap?.debug()}),
   mud:()=>mud?{...mud.debug(),effects:mudEffects.debug()}:null,
   castTackle,
   castMud,
@@ -1196,6 +1293,31 @@ try {
           gardenFeedback(`铁山靠命中练习靶，物理伤害 ${damage}。`);
         }
       }});
+    basketball=createGardenBasketball({scene,actor,groundHeight:resourcePreview.groundHeight,
+      resolveTarget:resourcePreview.targetPoint,trace:resourcePreview.traceGardenProjectile,
+      onPhase:phase=>{
+        const message={dribble:'交叉运球…',turn:'转身收球！',flight:'投篮！'}[phase];
+        if(message)gardenFeedback(message);
+      },
+      onContact:(contact,velocity,outOfRange)=>{
+        const direction=velocity.clone().setY(0).normalize();
+        const id=contact.targetId;
+        if(id){
+          tackleEffects.hit(contact.point,direction);
+          if(id.startsWith('visitor:')){
+            const message=gardenFriends.hit(id,'basketball',direction);
+            if(message)gardenFeedback(message);
+          }else{
+            resourcePreview.targetFeedback.hit(id,{kind:'basketball',direction});
+            gardenFeedback('篮球命中练习靶！');
+          }
+        }else if(contact.kind==='water'){
+          resourcePreview.pondWater.ripple(contact.point,.44);
+          gardenFeedback('篮球落进水里了。');
+        }else if(contact.kind==='surface')gardenFeedback('篮球被障碍挡住了。');
+        else if(outOfRange)gardenFeedback('目标太远，走近一点再投。');
+        else gardenFeedback(contact.kind==='ground'?'篮球落地了。':'投空了。');
+      }});
     tackle=createGardenTackle({actor,pivot:visualPivot,model,navigation,groundHeight:resourcePreview.groundHeight,
       targetContact:resourcePreview.tackleTargetContact,effects:tackleEffects,
       onPhase:(phase,kind,id)=>{
@@ -1215,7 +1337,7 @@ try {
       }});
     mudEffects=createMudEffects(resourcePreview.environment);
     mud=createGardenMud({actor,pivot:visualPivot,model,groundHeight:resourcePreview.groundHeight,
-      trace:resourcePreview.traceMud,resolveTarget:resourcePreview.targetPoint,effects:mudEffects,
+      trace:resourcePreview.traceGardenProjectile,resolveTarget:resourcePreview.targetPoint,effects:mudEffects,
       onRelease:()=>gardenFeedback('把泥团甩出去！'),onContact:(contact,velocity)=>{
         if(contact.targetId?.startsWith('visitor:')){
           const message=gardenFriends.hit(contact.targetId,'mud',velocity);
@@ -1246,7 +1368,7 @@ try {
       host: { gltf, config: metadata }, onControl: switchGardenCharacter,
       portrait: createCharacterPortrait, feedback: gardenFeedback, onOpen: () => setGardenMenu(false),
       onLeave: id => {
-        if (ironAim === id) ironAim = null;
+        if (guestAim === id) guestAim = null;
         const aim = combat.debug();
         if (aim.targetId === id && aim.phase !== 'shooting') combat.cancel();
         updateCombatUI();
@@ -1298,6 +1420,7 @@ try {
       stageRoster.setView(garden,gardenFriends.controlled);
       syncGardenPlayer(garden);
       waterFramed=false;
+      jumpFramed=false;
       stopTravel();clearHearts();playClip('Idle',{immediate:true});
       state.paused=false;updatePauseUI();
       state.movement=garden;$('movement').checked=garden;$('movement').disabled=false;
@@ -1347,6 +1470,9 @@ try {
     $('garden-tackle').addEventListener('click',castTackle);
     $('garden-mud').addEventListener('click',castMud);
     $('garden-iron').addEventListener('click',castIronShoulder);
+    $('garden-basketball').addEventListener('click',castBasketball);
+    $('garden-jump').addEventListener('click',castJump);
+    $('garden-rap').addEventListener('click',castRap);
     skillInput=createWaterSkillInput({button:$('garden-fire'),canStart:()=>isZuzu()&&resourcePreview.view==='garden'&&!state.paused&&!swimming.busy&&!groundSkillActive()&&combat.debug().phase==='idle',
       onStart:()=>{cancelGardenDanceRequest();skillAimBefore=combat.debug();controls.enabled=false;if(!skillAimBefore.targetId)combat.aimAt(forwardWaterPoint(),null,{silent:true});updateCombatUI();},
       onDrag:({x,y})=>{
@@ -1409,12 +1535,16 @@ function stepSimulation(delta){
       tackle.update(delta);
       mud.update(delta);
     }
-    if(garden)iron?.update(delta);
+    if(garden){
+      jumpCooldown=Math.max(0,jumpCooldown-delta);
+      rapCooldown=Math.max(0,rapCooldown-delta);
+      iron?.update(delta);
+      basketball?.update(delta,model,sampleActivePose,()=>playClip('Idle',{immediate:true}));
+    }
     if(garden&&iron?.active){
-      active.time=iron.time;
-      mixer.update(0);
+      sampleActivePose(iron.time);
       visualPivot.position.x=iron.lunge;
-    }else mixer.update(tackle?.holding?0:delta);
+    }else if(!basketball?.playing)mixer.update(tackle?.holding?0:delta);
     if(garden&&isZuzu())swimming?.update(delta);
     if (target && locomotion(currentName)) {
       const waypoint=resourcePreview?.view==='garden'?gardenWalker.waypoint:target;
@@ -1484,6 +1614,14 @@ function stepSimulation(delta){
       if (h.age > 1.3) { scene.remove(h.sprite); h.sprite.material.dispose(); hearts.splice(i,1); }
     }
   }
+  if(resourcePreview?.view==='stage'&&currentName==='Basketball'){
+    basketball.preview(model,active.time,floor.position.y,sampleActivePose);
+  }
+  if(currentName==='Jump'){
+    jumpEffect??=createDawnJumpEffect(scene);
+    jumpEffect.update(model,active.time,jumpEvent('jump_apex'),camera,innerHeight);
+  }
+  if(currentName==='Rap')rap.update(model,active.time,active.getClip().duration,state.paused,camera,innerHeight);
   if(resourcePreview&&active)resourcePreview.update(currentName,active.time,{delta:state.paused?0:delta*state.waterRate,paused:state.paused});
   if(active&&isZuzu())eyeExpressions?.update(currentName,active.time);
   if(garden)resourcePreview.pondWater.update(state.paused?0:delta,{contacts:isZuzu()?resourcePreview.swimContacts():[],position:actor.position,yaw:actor.rotation.y,inWater:isZuzu()&&swimming?.inWater,moving:isZuzu()&&swimming?.moving});
