@@ -25,8 +25,8 @@ export function createToonStyle({renderer,scene,ambient,key,fill,mobileGraphics=
   renderer.toneMappingExposure=1;
   renderer.shadowMap.type=THREE.PCFShadowMap;
 
-  function convert(source,role){
-    const cacheKey=role+source.uuid;
+  function convert(source,role,outline){
+    const cacheKey=`${role}:${outline}:${source.uuid}`;
     if(cache.has(cacheKey))return cache.get(cacheKey);
     const eye=role==='character'&&/eye/i.test(source.name);
     const water=/pond water|water ripple|window soft reflection/i.test(source.name);
@@ -40,16 +40,17 @@ export function createToonStyle({renderer,scene,ambient,key,fill,mobileGraphics=
       material.customProgramCacheKey=()=> 'mudkip-anime-cel-v06';
     }
     const ground=/terrain|earth warm|grass|water|ripple|glass|reflection|flower/i.test(source.name);
-    const outlined=role!=='stage'&&!ground&&!eye;
+    const outlined=outline&&role!=='stage'&&!ground&&!eye;
     const sceneryOutline = /foliage|forest|pine/i.test(source.name) ? .001 : .00065;
     material.userData.outlineParameters={visible:outlined,thickness:role==='character'?characterOutline:sceneryOutline*outlineScale,color:role==='character'?ink:forestInk,keepAlive:true};
     cache.set(cacheKey,material);materials++;if(outlined)outlinedMaterials++;
     return material;
   }
-  function apply(root,role='environment'){
+  function apply(root,role='environment',{outlineMesh}={}){
     root.traverse((object)=>{
       if(!object.isMesh||object.userData.combatDecoration)return;
-      object.material=Array.isArray(object.material)?object.material.map(m=>convert(m,role)):convert(object.material,role);
+      const outline=outlineMesh?.(object)??true;
+      object.material=Array.isArray(object.material)?object.material.map(m=>convert(m,role,outline)):convert(object.material,role,outline);
     });
   }
   function excludeUnstyled(){

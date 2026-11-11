@@ -70,9 +70,15 @@
   <div class="view-hint"><span id="view-hint">拖动旋转 · 滚轮缩放</span><button id="enter-garden" class="garden-entry" disabled>去庭院散步 →</button></div>
   <section class="controls" aria-label="动画控制">
     <div class="panel-heading"><span class="dot"></span><span id="clip-label" aria-live="polite">正在整理小伙伴…</span><span id="duration">—</span></div>
-    <h2>和 ZUZU 玩一会儿</h2>
-    <p class="intro" id="resource-hint">十二段动作 · 可以逐帧查看。</p>
-    <div class="scene-choice"><label for="scene-view">查看场景</label><select id="scene-view" disabled><option value="stage">动作台</option><option value="garden">庭院漫游</option></select></div>
+    <h2 id="resource-title">和 ZUZU 玩一会儿</h2>
+    <p class="intro" id="resource-hint" aria-live="polite">十二段动作 · 可以逐帧查看。</p>
+    <div class="stage-selectors">
+      <div class="scene-choice"><label for="scene-view">场景</label><select id="scene-view" disabled><option value="stage">动作台</option><option value="garden">庭院漫游</option></select></div>
+      <div class="scene-choice character-choice" role="group" aria-labelledby="character-roster-label">
+        <span id="character-roster-label">角色池</span>
+        <div id="character-roster" class="character-roster"></div>
+      </div>
+    </div>
     <div class="actions" role="group" aria-label="选择动作">
       <button data-clip="Idle" aria-pressed="true" disabled><span>待机</span><small>轻轻呼吸</small></button>
       <button data-clip="Walk" aria-pressed="false" disabled><span>走路</span><small>轻快小步</small></button>
@@ -86,6 +92,7 @@
       <button data-clip="DanceA" aria-pressed="false" disabled><span>跳舞</span><small>摇摇踏踏</small></button>
       <button data-clip="DanceB" aria-pressed="false" disabled><span>尾巴舞</span><small>扭扭尾巴</small></button>
       <button data-clip="DanceC" aria-pressed="false" disabled><span>庆祝舞</span><small>转圈眯眼</small></button>
+      <button data-clip="Wave" aria-pressed="false" hidden disabled><span>挥手</span><small>打个招呼</small></button>
     </div>
     <div class="setting"><label for="rate">走路 / 小跑步频</label><output id="rate-value" for="rate">1.0×</output></div>
     <input id="rate" type="range" min="0.5" max="1.8" step="0.1" value="1" aria-label="走路步频" disabled/>
@@ -105,6 +112,17 @@
   <nav id="garden-menu" class="garden-menu" aria-label="庭院工具菜单" hidden>
     <button id="garden-menu-toggle" class="garden-menu-toggle" aria-label="展开菜单" aria-expanded="false" aria-controls="garden-menu-panel" title="展开菜单"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>菜单</span></button>
     <button id="garden-recenter" class="garden-recenter" type="button" aria-label="恢复全景"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ui-camera"/></svg><span>全景</span></button>
+    <div id="garden-friends">
+      <button id="garden-invite" class="garden-invite-toggle" type="button" aria-label="邀请朋友" title="邀请朋友" aria-expanded="false" aria-controls="garden-invite-panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2m4-12v8m-4-4h8"/></svg>
+        <span>邀请</span>
+      </button>
+      <section id="garden-invite-panel" class="garden-invite-panel" aria-labelledby="garden-invite-heading" hidden>
+        <h2 id="garden-invite-heading">邀请朋友</h2>
+        <ul id="garden-invite-list" class="garden-invite-list"></ul>
+        <p id="garden-invite-status" class="garden-invite-status" role="status"></p>
+      </section>
+    </div>
     <div id="garden-menu-panel" class="garden-buttons garden-menu-panel" hidden><button id="garden-reset" aria-label="回到起点" title="回到起点"><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#ui-home"/></svg><span>起点</span></button><button id="garden-pause" aria-label="暂停" title="暂停" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24"><use id="garden-pause-icon" href="#ui-pause"/></svg><span id="garden-pause-caption">暂停</span></button><button id="garden-camera" aria-label="重置视角" title="重置视角"><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#ui-camera"/></svg><span>视角</span></button><button id="garden-back" aria-label="返回动作台" title="返回动作台"><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#ui-stage"/></svg><span>动作台</span></button></div>
   </nav>
   <div id="garden-dock" class="garden-dock" hidden>
@@ -123,13 +141,18 @@
         <svg class="skill-spark" viewBox="0 0 24 24" aria-hidden="true"><use href="#ui-star"/></svg>
         <span id="skill-thumb" class="skill-thumb"><svg viewBox="0 0 40 44" aria-hidden="true"><path d="M20 3C17 10 7 19 7 27a13 13 0 0 0 26 0C33 19 23 10 20 3Z" fill="currentColor"/><path d="M12 27c0 5 3 8 8 8" fill="none" stroke="#5fa5b5" stroke-width="3" stroke-linecap="round"/></svg><strong id="skill-title">水枪</strong></span>
       </button>
+      <button id="garden-iron" class="skill-button iron-button" type="button" aria-label="铁山靠" aria-busy="false" hidden disabled>
+        <span class="skill-thumb"><svg viewBox="0 0 32 28" aria-hidden="true"><path d="M16 4 7 15h7l-1 9 12-13h-8l3-7z" fill="currentColor"/><path d="M4 8h7m-8 4h4m15 8h6m-5 4h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><strong id="iron-title">铁山靠</strong></span>
+      </button>
       <button id="garden-gait" class="gait-switch" role="switch" aria-label="小跑模式" aria-checked="true" title="切换为轻快走"><span class="gait-track" aria-hidden="true"><span><svg viewBox="0 0 24 24"><use href="#ui-walk"/></svg></span><span><svg viewBox="0 0 24 24"><use href="#ui-run"/></svg></span></span></button>
       <span id="skill-caption">点按喷水 · 拖动瞄准</span>
     </div>
-    <section id="garden-controls" class="garden-controls" aria-label="ZUZU 的对话">
-      <span class="buddy-stamp" aria-hidden="true"><img src="./assets/ui/mudkip-avatar-user-v1.png" alt="" draggable="false" width="48" height="48"/></span>
+    <section id="garden-controls" class="garden-controls" aria-label="庭院对话">
+      <div id="garden-party" class="garden-party" role="group" aria-label="操控角色">
+        <div id="garden-reserves" class="garden-reserves" hidden></div>
+      </div>
       <div class="garden-dialog">
-        <h2 class="garden-speaker">ZUZU</h2>
+        <h2 id="garden-speaker" class="garden-speaker">ZUZU</h2>
         <p id="garden-feedback" class="garden-feedback" role="status" aria-live="polite">准备好啦，选一块草地吧。</p>
       </div>
     </section>

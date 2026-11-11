@@ -6,7 +6,11 @@ import { validateBytes } from 'gltf-validator';
 const project = fileURLToPath(new URL('../..', import.meta.url));
 const source = path.join(project,'game-assets');
 const destination = path.join(project,'animation-test/public/assets/game');
-const paths=['characters/mudkip/mudkip.glb','characters/mudkip/animations.json','environments/garden.glb','props/berry.glb','props/target-normal.glb','props/target-moving.glb','props/target-heavy.glb','levels/garden.json','fx/water-gun.js','fx/pond-water.js','fx/README.md','rendering/toon-style.js','rendering/README.md','gameplay/garden-swimming.js','gameplay/garden-navigation.js','gameplay/destination-marker.js','gameplay/water-aim.js','gameplay/garden-combat.js','gameplay/target-feedback.js','gameplay/water-skill-input.js','gameplay/README.md'];
+const characters = {
+  mudkip: { name:'ZUZU', model:'characters/mudkip/mudkip.glb', animations:'characters/mudkip/animations.json' },
+  dawn: { name:'Dawn', model:'characters/dawn/dawn.glb', animations:'characters/dawn/animations.json' },
+};
+const paths=[...Object.values(characters).flatMap(({model,animations})=>[model,animations]),'environments/garden.glb','props/berry.glb','props/target-normal.glb','props/target-moving.glb','props/target-heavy.glb','levels/garden.json','fx/water-gun.js','fx/pond-water.js','fx/README.md','rendering/toon-style.js','rendering/README.md','gameplay/garden-swimming.js','gameplay/garden-navigation.js','gameplay/destination-marker.js','gameplay/water-aim.js','gameplay/garden-combat.js','gameplay/target-feedback.js','gameplay/water-skill-input.js','gameplay/README.md'];
 await fs.mkdir(path.join(source,'fx'),{recursive:true});
 await fs.copyFile(path.join(project,'animation-test/src/water-gun-effect.js'),path.join(source,'fx/water-gun.js'));
 await fs.copyFile(path.join(project,'animation-test/src/pond-water.js'),path.join(source,'fx/pond-water.js'));
@@ -54,7 +58,7 @@ for (const relative of paths) {
   }
   files.push(item);
 }
-const manifest={schemaVersion:1,version:'0.21.11',units:'meters',up:'+Y',characterForward:'+Z',character:'characters/mudkip/mudkip.glb',animations:'characters/mudkip/animations.json',environment:'environments/garden.glb',level:'levels/garden.json',effects:{waterGun:'fx/water-gun.js',pond:'fx/pond-water.js'},rendering:{style:'rendering/toon-style.js',readme:'rendering/README.md'},gameplay:{swimming:'gameplay/garden-swimming.js',navigation:'gameplay/garden-navigation.js',destination:'gameplay/destination-marker.js',aim:'gameplay/water-aim.js',combat:'gameplay/garden-combat.js',hitFeedback:'gameplay/target-feedback.js',skillInput:'gameplay/water-skill-input.js'},props:{berry:'props/berry.glb',targets:{normal:'props/target-normal.glb',moving:'props/target-moving.glb',heavy:'props/target-heavy.glb'}},credits:'CREDITS.md',files};
+const manifest={schemaVersion:1,version:'0.21.11',units:'meters',up:'+Y',characterForward:'+Z',character:characters.mudkip.model,animations:characters.mudkip.animations,characters,environment:'environments/garden.glb',level:'levels/garden.json',effects:{waterGun:'fx/water-gun.js',pond:'fx/pond-water.js'},rendering:{style:'rendering/toon-style.js',readme:'rendering/README.md'},gameplay:{swimming:'gameplay/garden-swimming.js',navigation:'gameplay/garden-navigation.js',destination:'gameplay/destination-marker.js',aim:'gameplay/water-aim.js',combat:'gameplay/garden-combat.js',hitFeedback:'gameplay/target-feedback.js',skillInput:'gameplay/water-skill-input.js'},props:{berry:'props/berry.glb',targets:{normal:'props/target-normal.glb',moving:'props/target-moving.glb',heavy:'props/target-heavy.glb'}},credits:'CREDITS.md',files};
 manifest.rendering.expressions='rendering/eye-expressions.js';
 manifest.rendering.cottageMeadow='rendering/garden-meadow.js';
 manifest.rendering.windChime='rendering/garden-wind-chime.js';

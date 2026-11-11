@@ -1,0 +1,13 @@
+{
+  "clips": [
+    { "name": "Idle", "duration": 3.75, "loop": true, "label": "待机 · 挥手打招呼" },
+    { "name": "Walk", "duration": 0.5, "loop": true, "label": "走路 · 轻快踏步" },
+    { "name": "Run", "duration": 0.3333333333333333, "loop": true, "label": "小跑 · 快速蹬地" },
+    { "name": "IronShoulder", "duration": 1.25, "loop": false, "label": "铁山靠 · 高肩侧撞" }
+  ],
+  "locomotionTransition": 0.15,
+  "locomotion": {
+    "Walk": { "speed": 0.6588235294117647 },
+    "Run": { "speed": 1.8666666666666667 }
+  }
+}

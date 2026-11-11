@@ -23,7 +23,7 @@ export async function loadResourcePreviewAssets(root, track) {
       level.then(layout => Promise.all(layout.targets.map(target => loadModel(target.asset)))),
     ])),
   ]);
-  return { layout, fruitLayout, garden, berry, targets };
+  return { manifest, layout, fruitLayout, garden, berry, targets };
 }
 
 export async function createResourcePreview({renderer,scene,actor,model,root,assets,metadata,stageColliders,toon,heartTexture,mobileGraphics,onWaterContact=()=>{}}) {
@@ -150,7 +150,9 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
   const socket=model.getObjectByName(metadata.socket.mouth);
   if(!socket)throw new Error('角色缺少嘴部发射挂点');
   let view='stage';
+  let playerModel=model;
   let currentAction;
+  let visitors;
   let gameShot=null,contactSent=false;
   const collisionRay=new THREE.Raycaster();
   const a=new THREE.Vector3(),b=new THREE.Vector3(),segment=new THREE.Vector3();
@@ -165,10 +167,12 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
     const length=segment.length();
     if(length<1e-8)return null;
     collisionRay.set(from,segment.normalize());collisionRay.near=0;collisionRay.far=length;
-    return collisionRay.intersectObjects(objects,true).find(hit=>{
+    const scenery=collisionRay.intersectObjects(objects,true).find(hit=>{
       const fruit=hit.object.userData.gardenFruit;
       return isSceneHit(hit)&&(!fruit||orchard.isHanging(fruit));
-    })??null;
+    });
+    const visitor=view==='garden'?visitors?.intersect(collisionRay):null;
+    return visitor&&(!scenery||visitor.distance<scenery.distance)?visitor:scenery??null;
   }
   function surfaceNormal(contact){
     return contact.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(contact.object.matrixWorld)).normalize();
@@ -179,7 +183,7 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
     if(!hit)return null;
     const normal=surfaceNormal(hit);
     if(normal.dot(segment)>0)normal.negate();
-    const targetId=hit.object.userData.waterTarget??null;
+    const targetId=hit.object.userData.visitorId??hit.object.userData.waterTarget??null;
     const kind=hit.object.material.name==='Heightfield cartoon pond'?'water':targetId?'target':normal.y>.55?'ground':'surface';
     return {point:hit.point,normal,kind,targetId,attachment:targetId?hit.object.parent:null};
   }
@@ -192,9 +196,9 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
       b.copy(origin).addScaledVector(velocity,t);b.y-=.5*gravity*t*t;
       const contact=projectileContact(a,b,objects);
       if(contact){
-        const {waterTarget,fruitTree,gardenFruit}=contact.object.userData;
+        const {visitorId,waterTarget,fruitTree,gardenFruit}=contact.object.userData;
         const tree=fruitTree??orchard.treeAt(gardenFruit);
-        const targetId=waterTarget??(orchard.aimPoint(tree)?tree:null);
+        const targetId=visitorId??waterTarget??(orchard.aimPoint(tree)?tree:null);
         return {time:(i-1)*.02+.02*contact.distance/a.distanceTo(b),point:contact.point,normal:surfaceNormal(contact),targetId};
       }
       a.copy(b);
@@ -297,25 +301,34 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
   function setView(value){view=value;environment.visible=value==='garden';water.cancel();pondWater.reset();gameShot=null;endGardenMeal();}
   const stats={groups:garden.scene.children.length,renderMeshes:0,vertexColorMeshes:0,proceduralWaterMeshes:0,targets:targets.length,colliders:layout.colliders.length};
   garden.scene.traverse((o)=>{if(o.isMesh&&!o.userData.basketFruit){stats.renderMeshes++;if(o.geometry.attributes.color)stats.vertexColorMeshes++;else if(o.material.isShaderMaterial)stats.proceduralWaterMeshes++;}});
-  function targetPoint(id){const record=targetRecords.find(t=>t.id===id);return record?record.object.localToWorld(new THREE.Vector3().fromArray(record.hit.center).add(new THREE.Vector3(0,0,.09))):orchard.aimPoint(id);}
+  function targetPoint(id){
+    const record=targetRecords.find(t=>t.id===id);
+    return record?record.object.localToWorld(new THREE.Vector3().fromArray(record.hit.center).add(new THREE.Vector3(0,0,.09))):visitors?.targetPoint(id)??orchard.aimPoint(id);
+  }
   function tackleTargetContact(id,position,direction){
     const record=targetRecords.find(target=>target.id===id);
+    if(!record&&!visitors?.targetPoint(id))return null;
     const origin=position.clone().add(new THREE.Vector3(0,.43,0));
     const side=new THREE.Vector3(direction.z,0,-direction.x);
     const ray=new THREE.Raycaster(origin,direction,0,.82);
-    record.object.updateWorldMatrix(true,true);
+    record?.object.updateWorldMatrix(true,true);
     let nearest;
     for(const offset of [0,-.15,.15]){
       ray.ray.origin.copy(origin).addScaledVector(side,offset);
-      const hit=ray.intersectObject(record.object,true).find(isSceneHit);
+      const hit=record?ray.intersectObject(record.object,true).find(isSceneHit):visitors.intersect(ray,id);
       if(hit&&(!nearest||hit.distance<nearest.distance))nearest=hit;
     }
-    return nearest?.point??null;
+    return nearest?.point??visitors?.boundaryPoint(id,position)??null;
   }
   const fruitVisibilityRay = new THREE.Raycaster();
   const fruitDirection = new THREE.Vector3();
   function pickAim(ray,{radiusPerMeter=0}={}){
     const hit=ray.intersectObject(environment,true).find(isSceneHit);
+    const visitor=visitors?.intersect(ray);
+    if(visitor&&(!hit||visitor.distance<hit.distance)){
+      const targetId=visitor.object.userData.visitorId;
+      return {point:targetPoint(targetId),targetId,visitor:true,distance:visitor.distance};
+    }
     const hitsGround = hit && groundMeshes.includes(hit.object);
     if(radiusPerMeter && (!hit || hitsGround)){
       const nearby=orchard.nearbyFruit(ray.ray,{
@@ -324,7 +337,7 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
           fruitDirection.subVectors(point,ray.ray.origin);
           fruitVisibilityRay.far = fruitDirection.length() + .02;
           fruitVisibilityRay.set(ray.ray.origin,fruitDirection.normalize());
-          const first = fruitVisibilityRay.intersectObjects([environment,model],true).find(isSceneHit)?.object.userData;
+          const first = fruitVisibilityRay.intersectObjects([environment,playerModel],true).find(isSceneHit)?.object.userData;
           return first?.gardenFruit===id || (treeId && first?.fruitTree===treeId);
         },
       });
@@ -354,6 +367,7 @@ export async function createResourcePreview({renderer,scene,actor,model,root,ass
     return {visible:true,separation:rear-front,scale:food.scale.x,position:food.position.toArray()};
   }
   return {layout,stats,bounds,fitPoints,extraColliders,groundHeight,hitGround,footprintSurface,meadow,windChime,pondWater,swimContacts,
+    setVisitors(value){visitors=value;},visitorName:id=>visitors?.targetName(id),setPlayerModel(value){playerModel=value;},
     pickAim,targetPoint,tackleTargetContact,traceMud,targetFeedback,foodContact,basketInfo,beginGardenMeal,orchard,get foodType(){return foodType;},traceWater:(origin,forward)=>resolveImpact(origin,forward.clone().multiplyScalar(WATER_SPEED),WATER_GRAVITY),
     setView,get view(){return view;},update,onActionChange,debug:()=>({view,pond:pondWater.debug(),mouth:position.toArray(),direction:direction.toArray(),food:food.visible,eating:{phase:eatPhase,crumbs:foodFX.visible?crumbs.filter(o=>o.visible).length:0,hearts:foodFX.visible?happyHearts.filter(o=>o.visible).length:0},orb:false,water:water.debug().stream,waterEffect:water.debug()}),environment};
 }

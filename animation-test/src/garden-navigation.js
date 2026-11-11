@@ -43,6 +43,7 @@ class MinHeap{
 function obstacle(collider,radius,skin,shore){
   const padding=radius+skin+(collider.id==='pond'?shore:0);
   if(collider.type==='circle')return {id:collider.id,center:point(collider.center),radius:collider.radius+padding};
+  if(collider.type==='capsule')return {id:collider.id,start:point(collider.start),end:point(collider.end),radius:collider.radius+padding};
   let polygon;
   if(collider.type==='box'){
     const [x,,z]=collider.min,[right,,bottom]=collider.max;
@@ -61,30 +62,34 @@ export function createGardenNavigation(layout,{extraColliders=[],...options}={})
   const bounds={minX:layout.walkableBounds.min[0]+radius+skin,maxX:layout.walkableBounds.max[0]-radius-skin,minZ:layout.walkableBounds.min[1]+radius+skin,maxZ:layout.walkableBounds.max[1]-radius-skin};
   const targets=(layout.targets??[]).map(t=>({id:`target-${t.id}`,type:'circle',center:[t.position[0],t.position[2]],radius:Math.max(.18,t.hit.radius)}));
   const shapes=[...layout.colliders,...targets,...extraColliders].map(c=>obstacle(c,radius,skin,settings.pondShore));
-  function inBounds(p){return p.x>=bounds.minX-EPS&&p.x<=bounds.maxX+EPS&&p.z>=bounds.minZ-EPS&&p.z<=bounds.maxZ+EPS;}
-  function segmentBlocker(first,last){
+  const fixedShapeCount=shapes.length;
+  let revision=0;
+  function inBounds(p,extra){return p.x>=bounds.minX+extra-EPS&&p.x<=bounds.maxX-extra+EPS&&p.z>=bounds.minZ+extra-EPS&&p.z<=bounds.maxZ-extra+EPS;}
+  function segmentBlocker(first,last,extra=0,ignoreId=null){
     const a=point(first),b=point(last);
-    if(![a.x,a.z,b.x,b.z].every(Number.isFinite)||!inBounds(a))return 'boundary';
+    if(![a.x,a.z,b.x,b.z].every(Number.isFinite)||!inBounds(a,extra))return 'boundary';
     for(const shape of shapes){
-      if(shape.center){if(pointSegmentSquared(shape.center,a,b)<shape.radius**2-EPS)return shape.id;continue;}
-      if(Math.max(a.x,b.x)<shape.minX||Math.min(a.x,b.x)>shape.maxX||Math.max(a.z,b.z)<shape.minZ||Math.min(a.z,b.z)>shape.maxZ)continue;
+      if(shape.id===ignoreId)continue;
+      if(shape.center){if(pointSegmentSquared(shape.center,a,b)<(shape.radius+extra)**2-EPS)return shape.id;continue;}
+      if(shape.start){if(segmentSquared(a,b,shape.start,shape.end)<(shape.radius+extra)**2-EPS)return shape.id;continue;}
+      if(Math.max(a.x,b.x)<shape.minX-extra||Math.min(a.x,b.x)>shape.maxX+extra||Math.max(a.z,b.z)<shape.minZ-extra||Math.min(a.z,b.z)>shape.maxZ+extra)continue;
       const polygon=shape.polygon;
       if(inside(a,polygon)||inside(b,polygon))return shape.id;
-      for(let i=0;i<polygon.length;i++)if(segmentSquared(a,b,polygon[i],polygon[(i+1)%polygon.length])<shape.padding**2-EPS)return shape.id;
+      for(let i=0;i<polygon.length;i++)if(segmentSquared(a,b,polygon[i],polygon[(i+1)%polygon.length])<(shape.padding+extra)**2-EPS)return shape.id;
     }
-    return inBounds(b)?null:'boundary';
+    return inBounds(b,extra)?null:'boundary';
   }
   const segmentClear=(a,b)=>segmentBlocker(a,b)===null;
   const isWalkable=(p)=>segmentClear(p,p);
-  function sweep(first,last){
+  function sweep(first,last,extra=0,ignoreId=null){
     const a=point(first),b=point(last);
-    let blockedBy=segmentBlocker(a,b);
+    let blockedBy=segmentBlocker(a,b,extra,ignoreId);
     if(blockedBy===null)return {position:b,blockedBy};
     let low=0,high=1;
     // Prefixes of a swept segment stay blocked after the first contact.
     for(let i=0;i<16;i++){
       const t=(low+high)*.5;
-      const blocker=segmentBlocker(a,{x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
+      const blocker=segmentBlocker(a,{x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t},extra,ignoreId);
       if(blocker===null)low=t;
       else{high=t;blockedBy=blocker;}
     }
@@ -95,6 +100,12 @@ export function createGardenNavigation(layout,{extraColliders=[],...options}={})
   const dx=(bounds.maxX-bounds.minX)/(columns-1),dz=(bounds.maxZ-bounds.minZ)/(rows-1);
   const nodes=Array.from({length:columns*rows},(_,i)=>({x:bounds.minX+(i%columns)*dx,z:bounds.minZ+Math.floor(i/columns)*dz}));
   const free=Uint8Array.from(nodes,p=>Number(isWalkable(p)));
+  function setVisitorColliders(colliders){
+    shapes.splice(fixedShapeCount,shapes.length-fixedShapeCount,
+      ...colliders.map(collider=>obstacle(collider,radius,skin,settings.pondShore)));
+    for(let i=0;i<nodes.length;i++)free[i]=Number(isWalkable(nodes[i]));
+    revision++;
+  }
   function anchor(p,connect){
     let best=-1,bestDistance=Infinity;
     for(let i=0;i<nodes.length;i++)if(free[i]){
@@ -139,13 +150,15 @@ export function createGardenNavigation(layout,{extraColliders=[],...options}={})
     let length=0,last=start;for(const p of smoothed){length+=distance(last,p);last=p;}
     return {ok:true,reason:distance(end,request)>.04?'nearby':'detour',requested:request,goal:{...end},waypoints:smoothed,length,adjusted:distance(end,request)>.04,visited};
   }
-  return {isWalkable,segmentClear,sweep,plan,settings,bounds,debug:()=>({radius,skin,obstacles:shapes.length,columns,rows,freeCells:free.reduce((sum,n)=>sum+n,0)})};
+  const canFitVisitor=(center,footprint,ignoreId)=>segmentBlocker(center,center,footprint-radius,ignoreId)===null;
+  const sweepVisitor=(first,last,footprint,ignoreId)=>sweep(first,last,footprint-radius,ignoreId);
+  return {isWalkable,segmentClear,sweep,plan,settings,bounds,setVisitorColliders,canFitVisitor,sweepVisitor,get revision(){return revision;},debug:()=>({radius,skin,obstacles:shapes.length,columns,rows,freeCells:free.reduce((sum,n)=>sum+n,0)})};
 }
 
 export function createGardenWalker(navigation){
-  let plan=null,index=0,active=false;
+  let plan=null,index=0,active=false,routeRevision=navigation.revision;
   return {
-    start(from,to){plan=navigation.plan(from,to);index=0;active=plan.ok&&plan.waypoints.length>0;return plan;},
+    start(from,to){plan=navigation.plan(from,to);index=0;active=plan.ok&&plan.waypoints.length>0;routeRevision=navigation.revision;return plan;},
     cancel(){active=false;},
     get active(){return active;},
     get waypoint(){return active?plan.waypoints[index]:null;},
@@ -157,6 +170,11 @@ export function createGardenWalker(navigation){
     },
     advance(from,budget){
       const result=point(from);let travelled=0;
+      if(active&&routeRevision!==navigation.revision){
+        const previous=plan;
+        this.start(from,previous.goal);
+        if(!plan.ok)return {position:result,travelled,blocked:true,finished:false};
+      }
       while(active&&budget>EPS){
         const goal=plan.waypoints[index],length=distance(result,goal);
         if(length<EPS){index++;active=index<plan.waypoints.length;continue;}

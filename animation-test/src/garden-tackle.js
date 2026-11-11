@@ -18,7 +18,7 @@ export function createGardenTackle({actor,pivot,model,navigation,groundHeight,ta
     return 4*t*(1-t)*apex;
   }
 
-  function change(next){phase=next;age=0;onPhase(next,kind);}
+  function change(next){phase=next;age=0;onPhase(next,kind,hitId);}
   function startTackle(lockedPoint){
     if(phase!=='idle'||!navigation.isWalkable(actor.position))return false;
     direction.set(0,0,1).applyQuaternion(actor.quaternion);
@@ -36,6 +36,16 @@ export function createGardenTackle({actor,pivot,model,navigation,groundHeight,ta
     const y=groundHeight(x,z);
     actor.position.set(x,(y??actor.position.y-.005)+.005,z);
   }
+  function findContact(){
+    const candidate=blockedBy?.startsWith('target-')?blockedBy.slice(7):blockedBy?.startsWith('visitor:')?blockedBy:null;
+    const surface=candidate?targetContact(candidate,end,direction):null;
+    hitId=surface?candidate:null;
+    lunge=0;
+    if(!surface)return;
+    contact.copy(surface);
+    const contactDistance=(contact.x-end.x)*direction.x+(contact.z-end.z)*direction.z;
+    lunge=clamp(contactDistance-.48,0,.28);
+  }
   function launch(){
     start.copy(actor.position);
     end.copy(start).addScaledVector(direction,RANGE);
@@ -43,14 +53,7 @@ export function createGardenTackle({actor,pivot,model,navigation,groundHeight,ta
     end.set(sweep.position.x,groundHeight(sweep.position.x,sweep.position.z)??start.y,sweep.position.z);
     blockedBy=sweep.blockedBy;
     distance=Math.hypot(end.x-start.x,end.z-start.z);
-    const candidate=blockedBy?.startsWith('target-')?blockedBy.slice(7):null;
-    const surface=candidate?targetContact(candidate,end,direction):null;
-    if(surface){
-      hitId=candidate;
-      contact.copy(surface);
-      const contactDistance=(contact.x-end.x)*direction.x+(contact.z-end.z)*direction.z;
-      lunge=clamp(contactDistance-.48,0,.28);
-    }
+    findContact();
     const rangeFraction=clamp(distance/RANGE,0,1);
     const openPounce=hitId!==null||blockedBy===null;
     duration=FLIGHT*(openPounce?lerp(.60,1,Math.sqrt(rangeFraction)):clamp(rangeFraction,.28,1));
@@ -60,6 +63,9 @@ export function createGardenTackle({actor,pivot,model,navigation,groundHeight,ta
     change('dash');
   }
   function finishDash(){
+    if(hitId?.startsWith('visitor:')&&!targetContact(hitId,actor.position,direction)){
+      blockedBy=hitId=null;
+    }
     if(hitId){
       kind='hit';
       effects.hit(contact,direction);
@@ -88,9 +94,11 @@ export function createGardenTackle({actor,pivot,model,navigation,groundHeight,ta
     }else if(phase==='dash'){
       const t=flightProgress(),ramp=.22;
       const progress=(t<ramp?t*t/(2*ramp):t-ramp/2)/(1-ramp/2);
-      travel=distance*progress;
-      place(lerp(start.x,end.x,progress),lerp(start.z,end.z,progress));
-      if(t>=1)finishDash();
+      const sweep=navigation.sweep(actor.position,{x:lerp(start.x,end.x,progress),z:lerp(start.z,end.z,progress)});
+      place(sweep.position.x,sweep.position.z);
+      travel=Math.hypot(actor.position.x-start.x,actor.position.z-start.z);
+      if(sweep.blockedBy){blockedBy=sweep.blockedBy;end.copy(actor.position);findContact();}
+      if(t>=1||sweep.blockedBy)finishDash();
     }else if(phase==='hitstop'){
       if(age>=HIT_STOP)beginRecovery();
     }else{

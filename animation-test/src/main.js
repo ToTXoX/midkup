@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import './style.css';
 import './anime-ui.css';
 import { createResourcePreview, loadResourcePreviewAssets } from './resource-preview.js';
@@ -9,6 +10,7 @@ import { createGardenNavigation,createGardenWalker } from './garden-navigation.j
 import { createDestinationMarker } from './destination-marker.js';
 import { createGardenCombat } from './garden-combat.js';
 import { createGardenTackle } from './garden-tackle.js';
+import { createGardenIronShoulder } from './garden-iron-shoulder.js';
 import { createTackleEffects } from './tackle-effects.js';
 import { createGardenMud } from './garden-mud.js';
 import { createMudEffects } from './mud-effects.js';
@@ -18,6 +20,7 @@ import { createGardenFootprints } from './garden-footprints.js';
 import { preventGameSelection } from './game-selection.js';
 import { createEyeExpressions } from './eye-expressions.js';
 import { setupGardenViewport } from './garden-viewport.js';
+import { createGardenFriends } from './garden-friends.js';
 
 preventGameSelection(document.getElementById('app'));
 
@@ -52,11 +55,11 @@ function showLoadError(error) {
 const defaultMetadata = { clips: [{name:'Idle',loop:true},{name:'Walk',loop:true},{name:'PetReaction',loop:false}], locomotion:{Walk:{speed:.13/(.8*.62)}} };
 let metadata = defaultMetadata;
 let clipSettings = new Map(metadata.clips.map((c)=>[c.name,c]));
-const locomotion = (name) => metadata.locomotion[name];
-let resourcePreview;
+const locomotion = (name) => metadata.locomotion?.[name];
+let resourcePreview, stageRoster, gardenFriends;
 let navigation,gardenWalker,combat,skillInput,skillAimBefore,swimming,footprints;
-let tackle,tackleEffects,mud,mudEffects;
-const groundSkillActive=()=>!!(tackle?.active||mud?.active);
+let tackle,tackleEffects,mud,mudEffects,iron,ironAim=null;
+const groundSkillActive=()=>!!(tackle?.active||mud?.active||iron?.active);
 let gardenMeal=null,mealsEaten=0;
 const gardenDances=['DanceA','DanceB','DanceC'];
 let danceBag=[],lastGardenDance=null,pendingGardenDance=null,completedGardenDances=0;
@@ -87,7 +90,8 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 $('scene').appendChild(renderer.domElement);
 renderer.domElement.tabIndex=0;
 renderer.domElement.draggable=false;
-renderer.domElement.setAttribute('aria-label','庭院：点击草地移动，双指缩放，点击 ZUZU 或按跳舞键跳舞，点按水枪键喷水，拖动技能键瞄准');
+const zuzuCanvasLabel='庭院：点击草地移动，双指缩放，点击 ZUZU 或按跳舞键跳舞，点按水枪键喷水，拖动技能键瞄准';
+renderer.domElement.setAttribute('aria-label',zuzuCanvasLabel);
 
 const STAGE_FOV=36;
 const camera = new THREE.PerspectiveCamera(STAGE_FOV, 1, .05, 40);
@@ -126,7 +130,7 @@ function resetView() {
     let topEdge = verticalInset;
     let bottomEdge = innerHeight - verticalInset;
     if (compact) {
-      const topControls = ['garden-score', 'garden-music', 'garden-menu-toggle', 'view-hint'];
+      const topControls = ['garden-score', 'garden-music', 'garden-menu-toggle', 'garden-invite', 'view-hint'];
       topEdge = Math.max(...topControls.map(id => $(id).getBoundingClientRect().bottom)) + 12;
       if (innerWidth > innerHeight && innerHeight <= 500) {
         rightEdge = dock.left - 12;
@@ -283,7 +287,10 @@ const visualPivot=new THREE.Group();actor.add(visualPivot);
 const motion={speed:0,bank:0,pitch:0};
 const gardenRunSpeedMultiplier = 1.25;
 let model, mixer, active, currentName, target = null;
-const actions = new Map();
+let activeCharacter = 'mudkip';
+const isZuzu = () => activeCharacter === 'mudkip';
+let actions = new Map();
+const hasIronShoulder=()=>actions.has('IronShoulder');
 const state = { loaded: false, paused: false, rate: 1, waterRate: 1, movement: false, travelGait:'Run', transitions: 0 };
 const labels = { Idle: '待机 · 轻轻呼吸', Walk: '走路 · 小步慢走', PetReaction: '摸头 · 开心摇尾' };
 if(resourceMode)Object.assign(labels,{Walk:'走路 · 轻快小步',Run:'小跑 · 蹬地轻跳',Eat:'进食 · 低头咀嚼',WaterCharge:'蓄力 · 稳住身体',WaterShoot:'喷水 · 张嘴发射',Swim:'游泳 · 划水摆尾',SwimIdle:'漂浮 · 轻轻踩水',DanceA:'跳舞 · 摇摇踏踏舞',DanceB:'跳舞 · 扭扭尾巴舞',DanceC:'庆祝 · 转圈庆祝舞'});
@@ -364,7 +371,7 @@ function startGardenDance({completedMeal=false}={}){
   gardenFeedback({DanceA:'摇摇踏踏，跳支舞给你看～',DanceB:'扭扭尾巴，跟上节奏～',DanceC:'转个圈，开心庆祝一下！'}[name]);
 }
 function requestGardenDance(){
-  if(!state.loaded||resourcePreview?.view!=='garden'||groundSkillActive())return;
+  if(!isZuzu()||!state.loaded||resourcePreview?.view!=='garden'||groundSkillActive())return;
   state.paused=false;updatePauseUI();
   if(isGardenDancePlaying()){gardenFeedback('这支还没跳完，等我一下～');return;}
   if(pendingGardenDance){gardenFeedback(pendingGardenDance.kind==='meal'?'吃完这颗果子就跳给你看～':'上岸后就跳给你看～');return;}
@@ -381,6 +388,7 @@ function requestGardenDance(){
 }
 function setGardenMenu(open){
   const toggle=$('garden-menu-toggle');if(!toggle)return;
+  if(open)gardenFriends?.close();
   toggle.setAttribute('aria-expanded',String(open));
   const label=open?'收起菜单':'展开菜单';toggle.setAttribute('aria-label',label);toggle.title=label;
   $('garden-menu-panel').hidden=!open;
@@ -406,7 +414,7 @@ function keepMealFaceVisible(delta,beforeBite){
   return actor.quaternion.angleTo(mealTurn)<.025;
 }
 function goEatGardenFruit(fruitId=null){
-  if(!state.loaded||resourcePreview?.view!=='garden'||groundSkillActive())return;
+  if(!isZuzu()||!state.loaded||resourcePreview?.view!=='garden'||groundSkillActive())return;
   const source=fruitId?resourcePreview.orchard.groundFruit(fruitId):resourcePreview.basketInfo;
   if(!source||gardenMeal?.phase==='eating'||(gardenMeal&&gardenMeal.fruitId===fruitId))return;
   cancelGardenDanceRequest();
@@ -433,31 +441,255 @@ function goEatGardenFruit(fruitId=null){
   gardenFeedback(fruitId?`这就过去吃${source.name}！`:'去果篮旁吃一颗果子，等我一下。');
 }
 function setGait(name){
+  if(!actions.has(name)||!locomotion(name))return;
   state.travelGait=name;
   const toggle=$('garden-gait');
   if(toggle){toggle.setAttribute('aria-checked',String(name==='Run'));toggle.title=name==='Run'?'切换为轻快走':'切换为小跑';}
   if(target&&resourcePreview?.view==='garden'&&!swimming?.inWater)playClip(name);
 }
-function resetActor(){
+function stopGardenActions(){
   cancelGardenDanceRequest();
-  swimming?.reset();resourcePreview?.pondWater.reset();
-  resourcePreview?.meadow.reset();
-  resourcePreview?.windChime?.reset();
+  swimming?.reset();
   tackle?.reset();
   mud?.reset();
+  iron?.cancel();
+  ironAim=null;
   footprints?.reset();
   cancelGardenMeal();
   skillInput?.cancel();
   combat?.cancel();
   stopTravel();
+  clearHearts();
   visualPivot.rotation.set(0,0,0);
+  visualPivot.position.set(0,0,0);
+}
+function resetActor(restorePosition=false){
+  stopGardenActions();
+  resourcePreview?.pondWater.reset();
+  resourcePreview?.meadow.reset();
+  resourcePreview?.windChime?.reset();
   if(resourcePreview?.view==='garden'){
-    actor.position.fromArray(resourcePreview.layout.spawn.position);
-    actor.position.y=(resourcePreview.groundHeight(actor.position.x,actor.position.z)??actor.position.y)+.005;
-    actor.rotation.set(0,resourcePreview.layout.spawn.yaw,0);
-    gardenFeedback('回到起点啦，按跳舞键一起玩吧～');
+    if(!restorePosition||!gardenFriends.restorePlayer()){
+      const point=gardenFriends.resetPoint();
+      if(!point){gardenFeedback('起点附近没有空地。');return;}
+      actor.position.copy(point);
+      actor.position.y=(resourcePreview.groundHeight(actor.position.x,actor.position.z)??actor.position.y)+.005;
+      actor.rotation.set(0,resourcePreview.layout.spawn.yaw,0);
+    }
+    gardenFeedback(isZuzu()?'回到起点啦，按跳舞键一起玩吧～':'回到起点啦，点草地继续散步。');
   }else{actor.position.set(0,.005,0);actor.quaternion.identity();}
 }
+
+function createPlayback(gltf, config) {
+  const player = new THREE.AnimationMixer(gltf.scene);
+  const settings = new Map(config.clips.map(clip => [clip.name, clip]));
+  const clips = new Map(gltf.animations.map(clip => [clip.name, player.clipAction(clip)]));
+  for (const name of settings.keys()) {
+    if (!clips.has(name)) throw new Error(`GLB 缺少 ${name} 动作`);
+  }
+  player.addEventListener('finished', event => {
+    if (event.action !== active || event.action.loop !== THREE.LoopOnce) return;
+    if (currentName === 'Eat' && pendingGardenDance?.kind === 'meal' && resourcePreview?.view === 'garden') {
+      startGardenDance({ completedMeal: true });
+      return;
+    }
+    const danced = isGardenDancePlaying();
+    if (danced) completedGardenDances++;
+    playClip(swimming?.inWater ? 'SwimIdle' : 'Idle', { completed: true });
+    if (danced) gardenFeedback('跳完啦，再按一次跳舞键吧～');
+  });
+  return { model: gltf.scene, mixer: player, actions: clips, metadata: config, clipSettings: settings };
+}
+
+const stageHint = () => hasIronShoulder() ? '待机时挥手 · 可逐帧查看走路和小跑。' : '十二段动作 · 可以逐帧查看。';
+const characterPortraits = {
+  mudkip: 'mudkip-avatar-user-v1.png',
+  dawn: 'dawn-avatar.png',
+};
+
+function createCharacterPortrait(id) {
+  const file = characterPortraits[id];
+  if (!file) return null;
+  const image = document.createElement('img');
+  image.src = `${import.meta.env.BASE_URL}assets/ui/${file}`;
+  image.alt = '';
+  image.draggable = false;
+  return image;
+}
+
+function outlineDawnMesh(mesh) {
+  // Eyes and fabric markings already have their own edges in the model.
+  return /^(Hood_shell|Round_ear|Romper_torso|Rounded_boot|Sleeve_&_mitten|Bill_|Bow_(knot|wing)|Backpack_strap|Satchel_(body|flap)$)/.test(mesh.name);
+}
+
+function createCharacterLoader(characters, loader) {
+  const assets = new Map();
+
+  async function load(id) {
+    const entry = characters[id];
+    const [gltf, config] = await Promise.all([
+      loader.loadAsync(resourceRoot + entry.model),
+      fetch(resourceRoot + entry.animations).then(response => {
+        if (!response.ok) throw new Error('动画配置加载失败');
+        return response.json();
+      }),
+    ]);
+    gltf.scene.traverse(object => {
+      if (object.isMesh) object.castShadow = true;
+    });
+    toon.apply(gltf.scene, 'character', { outlineMesh: id === 'dawn' ? outlineDawnMesh : undefined });
+    return { gltf, config };
+  }
+
+  return id => {
+    if (!assets.has(id)) {
+      assets.set(id, load(id).catch(error => {
+        assets.delete(id);
+        throw error;
+      }));
+    }
+    return assets.get(id);
+  };
+}
+
+function setupStageRoster(characters, loadCharacter) {
+  const roster = $('character-roster');
+  const cache = new Map([['mudkip', { model, mixer, actions, metadata, clipSettings }]]);
+  const buttons = new Map();
+  let selected = 'mudkip';
+  let request = 0;
+  let busy = false;
+  for (const [id, entry] of Object.entries(characters)) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'character-avatar';
+    button.title = entry.name;
+    button.setAttribute('aria-label', entry.name);
+    button.setAttribute('aria-pressed', String(id === activeCharacter));
+    button.append(createCharacterPortrait(id) ?? entry.name);
+    button.addEventListener('click', () => select(id));
+    buttons.set(id, button);
+    roster.append(button);
+  }
+
+  function setBusy(value) {
+    busy = value;
+    roster.setAttribute('aria-busy', String(busy));
+    for (const button of buttons.values()) button.setAttribute('aria-disabled', String(busy));
+  }
+
+  function activate(id) {
+    if (id === activeCharacter) return;
+    mixer.stopAllAction();
+    visualPivot.remove(model);
+    ({ model, mixer, actions, metadata, clipSettings } = cache.get(id));
+    visualPivot.add(model);
+    activeCharacter = id;
+    for (const [characterId, button] of buttons) {
+      button.setAttribute('aria-pressed', String(characterId === id));
+    }
+    currentName = active = null;
+    $('resource-title').textContent = `和 ${characters[id].name} 玩一会儿`;
+    for (const button of document.querySelectorAll('[data-clip]')) {
+      button.hidden = !actions.has(button.dataset.clip);
+    }
+  }
+
+  function cacheCharacter(id, { gltf, config }) {
+    if (!cache.has(id)) cache.set(id, createPlayback({ ...gltf, scene: clone(gltf.scene) }, config));
+  }
+
+  async function select(id) {
+    if (!buttons.has(id) || id === selected || resourcePreview.view !== 'stage' || busy) return;
+    const ticket = ++request;
+    const entry = characters[id];
+    setBusy(true);
+    $('resource-hint').textContent = `正在加载 ${entry.name}…`;
+    try {
+      if (!cache.has(id)) {
+        const asset = await loadCharacter(id);
+        if (ticket !== request) return;
+        cacheCharacter(id, asset);
+      }
+      if (ticket !== request) return;
+      selected = id;
+      activate(id);
+      waterFramed = false;
+      resetActor();
+      state.paused = false;
+      updatePauseUI();
+      playClip('Idle', { immediate: true, force: true });
+      updateTimeline();
+      $('resource-hint').textContent = stageHint();
+      resetView();
+    } catch (error) {
+      if (ticket !== request) return;
+      $('resource-hint').textContent = `${entry.name} 加载失败，请重新选择。`;
+      console.warn(error);
+    } finally {
+      if (ticket === request) setBusy(false);
+    }
+  }
+
+  return {
+    select,
+    activateGarden(id, asset) {
+      cacheCharacter(id, asset);
+      activate(id);
+    },
+    setView(garden, controlled) {
+      request++;
+      setBusy(false);
+      activate(garden ? controlled : selected);
+    },
+  };
+}
+
+function syncGardenPlayer(garden) {
+  const guest = garden && !isZuzu();
+  document.body.classList.toggle('guest-control', guest);
+  $('garden-score').hidden = !garden || guest && !hasIronShoulder();
+  for (const id of ['garden-fire', 'garden-mud', 'garden-tackle', 'skill-caption']) $(id).hidden = guest;
+  gardenDanceButton.hidden = guest;
+  $('garden-iron').hidden = !guest || !hasIronShoulder();
+  $('garden-gait').hidden = guest && !(actions.has('Run') && locomotion('Run') && actions.has('Walk') && locomotion('Walk'));
+  setHudText('garden-speaker', gardenFriends.controlledName);
+  renderer.domElement.setAttribute('aria-label', guest ? `庭院：点击草地移动 ${gardenFriends.controlledName}，点击角色瞄准，按铁山靠发动技能` : zuzuCanvasLabel);
+  resourcePreview.setPlayerModel(model);
+}
+
+function switchGardenCharacter(id) {
+  if (!state.loaded || resourcePreview.view !== 'garden' || id === gardenFriends.controlled) return;
+  function change() {
+    if (resourcePreview.view !== 'garden') return;
+    const previous = actor.position.clone();
+    const changed = gardenFriends.control(id, asset => {
+      combat.setMode('move');
+      stopGardenActions();
+      if (isZuzu()) eyeExpressions?.update('Idle', 0);
+      stageRoster.activateGarden(id, asset);
+    });
+    if (!changed) return;
+    syncGardenPlayer(true);
+    playClip('Idle', { immediate: true, force: true });
+    gardenFeedback(`现在操控 ${gardenFriends.controlledName}，点草地移动。`);
+    const projected = actor.position.clone().add(new THREE.Vector3(0,.35,0)).project(camera);
+    if (controls.getDistance() < 14 * lensDistanceScale() || Math.abs(projected.x) > .87 || Math.abs(projected.y) > .87) {
+      const offset = actor.position.clone().sub(previous).setY(0);
+      controls.target.add(offset);
+      camera.position.add(offset);
+      controls.update();
+    }
+    updateCombatUI();
+  }
+  if (isZuzu() && swimming.inWater) {
+    state.paused = false;
+    updatePauseUI();
+    swimming.leave(change);
+    gardenFeedback('上岸后就切换角色。');
+  } else change();
+}
+
 function playClip(name, { immediate = false, force = false, completed = false,gameShot=null } = {}) {
   if (!state.loaded || (!force && name === currentName)) return;
   if(gardenMeal?.phase==='eating'&&name!=='Eat'){
@@ -492,9 +724,9 @@ function playClip(name, { immediate = false, force = false, completed = false,ga
   if (gardenDanceEffects) {
     const dancing = isGardenDancePlaying();
     gardenDanceEffects.hidden = !dancing;
-    gardenDanceButton.setAttribute('aria-busy', String(dancing));
+    gardenDanceButton.setAttribute('aria-busy', String(dancing || resourcePreview?.view === 'garden' && name === 'Wave'));
   }
-  eyeExpressions?.update(name,0);
+  if(isZuzu())eyeExpressions?.update(name,0);
   const wasTailDanceFramed=tailDanceFramed;tailDanceFramed=name==='DanceB';
   resourcePreview?.onActionChange(name,{completed,gameShot});
   combat?.onActionChange(name,{completed});
@@ -508,13 +740,21 @@ function playClip(name, { immediate = false, force = false, completed = false,ga
   Object.assign($('rate'),waterControls?{min:.25,max:1,step:.25,value:state.waterRate}:{min:.5,max:1.8,step:.1,value:state.rate});
   $('rate-value').value=`${(waterControls?state.waterRate:state.rate).toFixed(2).replace(/0$/,'')}×`;
   state.transitions++;
-  $('clip-label').textContent = labels[name];
+  $('clip-label').textContent = clipSettings.get(name).label ?? labels[name];
   $('duration').textContent = `${next.getClip().duration.toFixed(1)} s`;
   $('playback-note').textContent = looping ? '循环播放' : '结束后回到待机';
   document.querySelectorAll('[data-clip]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.clip === name)));
 }
 function pet() {
   if (!state.loaded) return;
+  if (actions.has('Wave')) {
+    stopTravel();
+    state.paused = false;
+    updatePauseUI();
+    playClip('Wave', { force: true });
+    return;
+  }
+  if (!actions.has('PetReaction')) return;
   cancelGardenDanceRequest();
   if(swimming?.busy)return;
   swimming?.hold();
@@ -576,7 +816,7 @@ function seek(time) {
   active.stopFading().setEffectiveWeight(1);
   active.time = THREE.MathUtils.clamp(time, 0, active.getClip().duration - 1e-7);
   mixer.update(0);
-  eyeExpressions?.update(currentName,active.time);
+  if(isZuzu())eyeExpressions?.update(currentName,active.time);
   model.updateMatrixWorld(true);
   updateTimeline();
 }
@@ -592,16 +832,19 @@ function moveTo(point,{fromSwimming=false}={}) {
   cancelGardenDanceRequest();
   if(resourcePreview?.view==='garden'){
     cancelGardenMeal();
+    ironAim=null;
     skillInput?.cancel();
     combat?.setMode('move');combat?.cancel();updateCombatUI();
-    if(!fromSwimming){const result=swimming?.request(resourcePreview.pondWater.swimTarget(point));if(result?.handled){state.paused=false;updatePauseUI();return result.plan;}}
+    if(isZuzu()&&!fromSwimming){const result=swimming?.request(resourcePreview.pondWater.swimTarget(point));if(result?.handled){state.paused=false;updatePauseUI();return result.plan;}}
+    const gait = actions.has(state.travelGait) && locomotion(state.travelGait) ? state.travelGait : 'Walk';
+    if(!actions.has(gait)||!locomotion(gait))return;
     const plan=gardenWalker.start(actor.position,point);
     if(!plan.ok){stopTravel();gardenFeedback('这里暂时走不过去，试试旁边的草地。');playClip('Idle');return plan;}
     if(!plan.waypoints.length){stopTravel();playClip('Idle');return plan;}
     target=new THREE.Vector3(plan.goal.x,0,plan.goal.z);
     destinationMarker.show(new THREE.Vector3(plan.goal.x,(resourcePreview.groundHeight(plan.goal.x,plan.goal.z)??0)+.025,plan.goal.z));
     gardenFeedback(plan.adjusted?'那里有障碍，会停在附近的草地。':plan.waypoints.length>1?'找到路线啦，绕过去看看。':'正在过去啦…');
-    state.paused=false;updatePauseUI();clearHearts();playClip(state.travelGait);return plan;
+    state.paused=false;updatePauseUI();clearHearts();playClip(gait);return plan;
   }
   target = point.clone(); target.y = 0;
   if (target.length() > 1.05) target.setLength(1.05);
@@ -641,10 +884,12 @@ renderer.domElement.addEventListener('pointermove',e=>{
   if(down||e.buttons||e.pointerType!=='mouse'||resourcePreview?.view!=='garden')return;
   setPointerRay(e);
   const candidate=resourcePreview.orchard.nearbyFruit(raycaster.ray);
-  if(!candidate){setFruitHover();return;}
+  if(!candidate&&!gardenFriends.intersect(raycaster)){setFruitHover();return;}
   const aimed=resourcePreview.pickAim(raycaster);
-  const character=aimed?.fruit&&raycaster.intersectObject(model,true)[0];
-  setFruitHover(characterInFront(character,aimed)?null:aimed?.fruit?.id);
+  const character=(aimed?.fruit||aimed?.visitor)&&raycaster.intersectObject(model,true)[0];
+  const playerInFront=characterInFront(character,aimed);
+  setFruitHover(playerInFront?null:aimed?.fruit?.id);
+  if(aimed?.visitor&&!playerInFront)renderer.domElement.style.cursor='pointer';
 });
 renderer.domElement.addEventListener('pointerleave',()=>setFruitHover());
 renderer.domElement.addEventListener('pointercancel',()=>{down=null;setFruitHover();});
@@ -660,6 +905,15 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     const radiusPerMeter = e.pointerType==='touch' ? 32 * halfFovTan(camera.fov) / renderer.domElement.clientHeight : 0;
     const aimed=resourcePreview.pickAim(raycaster,{radiusPerMeter});
     if(characterInFront(hits[0],aimed)){requestGardenDance();return;}
+    if(!isZuzu()){
+      if(aimed?.visitor)gardenFriends.greet(aimed.targetId);
+      if(aimed?.targetId&&hasIronShoulder()&&(aimed.visitor||resourcePreview.layout.targets.some(target=>target.id===aimed.targetId))){
+        aimGardenTarget(aimed.point,aimed.targetId);return;
+      }
+      if(aimed?.visitor)return;
+      if(state.movement&&aimed)moveTo(aimed.point);
+      return;
+    }
     if(aimed?.fruit){goEatGardenFruit(aimed.fruit.id);return;}
     if(aimed?.basket){goEatGardenFruit();return;}
     if(aimed?.targetId){aimGardenTarget(aimed.point,aimed.targetId);return;}
@@ -679,26 +933,39 @@ function forwardWaterPoint(){
   point.y=(resourcePreview.groundHeight(point.x,point.z)??actor.position.y-.005)+.02;return point;
 }
 function castWaterSkill(){
-  if(!combat||resourcePreview.view!=='garden'||state.paused||swimming?.busy||groundSkillActive()||combat.debug().phase!=='idle')return false;
+  if(!isZuzu()||!combat||resourcePreview.view!=='garden'||state.paused||swimming?.busy||groundSkillActive()||combat.debug().phase!=='idle')return false;
   if(!combat.debug().targetId)combat.aimAt(forwardWaterPoint(),null,{silent:true});
   const fired=combat.fire(state.paused);updateCombatUI();return fired;
 }
 
 function aimGardenTarget(point,id){
-  if(groundSkillActive())return;
+  if(!point||groundSkillActive())return;
+  if(!isZuzu()){
+    if(!hasIronShoulder())return;
+    ironAim=id;
+    stopTravel();playClip('Idle');
+    gardenFeedback(`已锁定 ${gardenFriends.targetName(id)??'练习靶'}，点按铁山靠。`);
+    updateCombatUI();
+    return;
+  }
   cancelGardenDanceRequest();
-  if(combat.aimAt(point,id)&&resourcePreview.layout.targets.some(target=>target.id===id)){
-    gardenFeedback(`已锁定${combat.debug().targetName}，可以喷水或掷泥，近距离也能撞击。`);
+  if(combat.aimAt(point,id)){
+    const visitor=gardenFriends.targetName(id);
+    if(visitor)gardenFriends.greet(id);
+    if(visitor||resourcePreview.layout.targets.some(target=>target.id===id)){
+      const label=visitor?` ${visitor}`:combat.debug().targetName;
+      gardenFeedback(`已锁定${label}，可以喷水或掷泥，近距离也能撞击。`);
+    }
   }
   updateCombatUI();
 }
 
 function castGroundSkill(skill){
-  if(!skill||resourcePreview.view!=='garden'||state.paused||groundSkillActive()||swimming.inWater||skillInput?.debug().active)return false;
+  if(!isZuzu()||!skill||resourcePreview.view!=='garden'||state.paused||groundSkillActive()||swimming.inWater||skillInput?.debug().active)return false;
   if(skill===mud&&!mud.ready)return false;
   const aim=combat.debug();
   if(aim.phase!=='idle')return false;
-  const locked=resourcePreview.layout.targets.some(target=>target.id===aim.targetId)?aim.targetId:null;
+  const locked=gardenFriends.targetName(aim.targetId)||resourcePreview.layout.targets.some(target=>target.id===aim.targetId)?aim.targetId:null;
   cancelGardenDanceRequest();cancelGardenMeal();swimming.reset();stopTravel();clearHearts();combat.restorePose();
   playClip('Idle',{immediate:true});
   const started=skill.start(locked?resourcePreview.targetPoint(locked):null,locked);
@@ -709,9 +976,21 @@ function castGroundSkill(skill){
 const castTackle=()=>castGroundSkill(tackle);
 const castMud=()=>castGroundSkill(mud);
 
+function castIronShoulder(){
+  if(resourcePreview?.view!=='garden'||!hasIronShoulder()||state.paused||groundSkillActive()||!iron?.ready)return false;
+  const aim=ironAim?resourcePreview.targetPoint(ironAim):null;
+  if(!iron.start(aim))return false;
+  stopTravel();clearHearts();
+  tackleEffects.enableBeatSound();
+  playClip('IronShoulder',{immediate:true,force:true});
+  updateCombatUI();
+  return true;
+}
+
 function updateCombatUI(){
   if(!combat)return;
-  const info=combat.debug(),garden=resourcePreview.view==='garden',busy=info.phase!=='idle';
+  const info=combat.debug(),garden=resourcePreview.view==='garden'&&isZuzu(),busy=info.phase!=='idle';
+  const ironGarden=resourcePreview.view==='garden'&&hasIronShoulder();
   const tackling=!!tackle?.active;
   const groundBusy=groundSkillActive();
   const gesture=skillInput?.debug()??{active:false,dragging:false,offset:[0,0]};
@@ -725,10 +1004,18 @@ function updateCombatUI(){
     $('garden-basket').dataset.paused=String(state.paused);
   }
   const groundDisabled=!garden||state.paused||busy||groundBusy||!!swimming?.inWater||gesture.active;
-  $('garden-fire').disabled=state.paused||busy||groundBusy||!!swimming?.busy;
+  $('garden-fire').disabled=!garden||state.paused||busy||groundBusy||!!swimming?.busy;
   if (gardenDanceButton.disabled !== groundBusy) gardenDanceButton.disabled = groundBusy;
   $('garden-tackle').disabled=groundDisabled;
   $('garden-mud').disabled=groundDisabled||!mud?.ready;
+  const ironButton=$('garden-iron');
+  ironButton.disabled=!ironGarden||state.paused||!iron?.ready;
+  if(ironGarden){
+    const {phase}=iron.debug();
+    ironButton.setAttribute('aria-busy',String(iron.active));
+    ironButton.style.setProperty('--cooldown',`${(1-iron.cooldownRatio)*360}deg`);
+    setHudText('iron-title',phase==='charge'?'蓄力':phase==='dash'?'靠击':phase==='recover'?'收势':iron.ready?'铁山靠':`${Math.ceil(iron.cooldown)}s`);
+  }
   $('garden-tackle').dataset.busy=String(tackling);
   $('garden-tackle').setAttribute('aria-busy',String(tackling));
   $('garden-mud').dataset.busy=String(!mud?.ready);
@@ -743,15 +1030,16 @@ function updateCombatUI(){
   $('garden-fire').style.setProperty('--cooldown',`${busy&&info.phase==='shooting'?Math.min(1,active.time)*360:360}deg`);
   if(info.phase==='shooting'&&!info.lastContact)gardenFeedback(active.time<.33?'闭嘴蓄水…':active.time<.66?'水枪发射！':'水流正在飞向目标…');
   setHudText('garden-hit-count',String(resourcePreview.targetFeedback.debug().total).padStart(2,'0'));
-  $('aim-reticle').hidden=!garden||!info.point||groundBusy;
-  if(garden&&info.point&&!groundBusy){
-    const p=new THREE.Vector3().fromArray(info.point).project(camera),visible=p.z<1&&p.z>-1&&Math.abs(p.x)<1&&Math.abs(p.y)<1;
+  const aimPoint=ironGarden&&ironAim?resourcePreview.targetPoint(ironAim):garden&&info.point?new THREE.Vector3().fromArray(info.point):null;
+  $('aim-reticle').hidden=!aimPoint||groundBusy;
+  if(aimPoint&&!groundBusy){
+    const p=aimPoint.project(camera),visible=p.z<1&&p.z>-1&&Math.abs(p.x)<1&&Math.abs(p.y)<1;
     $('aim-reticle').hidden=!visible;
     $('aim-reticle').style.left=`${(p.x+1)*innerWidth/2}px`;$('aim-reticle').style.top=`${(1-p.y)*innerHeight/2}px`;
-    const ready=info.assessment?.reachable&&info.assessment?.clear;
+    const ready=ironGarden?iron.ready:info.assessment?.reachable&&info.assessment?.clear;
     $('aim-reticle').dataset.ready=String(ready);$('aim-reticle').dataset.firing=String(busy);
     const status=gesture.active?'松手喷水':info.assessment?.blocked?'被遮挡':!info.assessment?.reachable?'距离太远':info.targetId?'可命中':'已瞄准';
-    setHudText('aim-label',`${info.targetName} · ${status}`);
+    setHudText('aim-label',ironGarden?`${gardenFriends.targetName(ironAim)??'练习靶'} · 铁山靠`:`${info.targetName} · ${status}`);
   }
   const hit=resourcePreview.targetFeedback.debug();
   const recent=hit.targets.filter(t=>t.hits&&t.age<.75).sort((a,b)=>a.age-b.age)[0];
@@ -761,17 +1049,21 @@ function updateCombatUI(){
   if(garden&&waterHit){const p=resourcePreview.targetPoint(recent.id).add(new THREE.Vector3(0,.25+recent.age*.5,0)).project(camera);$('hit-pop').style.left=`${(p.x+1)*innerWidth/2}px`;$('hit-pop').style.top=`${(1-p.y)*innerHeight/2}px`;$('hit-pop').style.opacity=String(1-THREE.MathUtils.smoothstep(recent.age,.45,.75));}
   for(const b of document.querySelectorAll('[data-aim-target]')){
     const id=b.dataset.aimTarget,p=resourcePreview.targetPoint(id).project(camera);
-    b.hidden=!garden||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1;
+    b.hidden=!(garden||ironGarden)||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1;
     b.style.left=`${(p.x+1)*innerWidth/2}px`;b.style.top=`${(1-p.y)*innerHeight/2}px`;
-    b.setAttribute('aria-pressed',String(info.targetId===id));
+    b.setAttribute('aria-pressed',String((ironGarden?ironAim:info.targetId)===id));
     b.dataset.hits=hit.targets.find(t=>t.id===id).hits;
   }
 }
 window.addEventListener('keydown',e=>{
   if(resourcePreview?.view!=='garden'||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
   if(e.code==='Space'&&e.target.tagName==='BUTTON'&&e.target.id!=='garden-fire')return;
-  if(e.code==='Space'){e.preventDefault();if(!e.repeat&&!skillInput?.debug().active)castWaterSkill();}
-  if(e.code==='Escape'){setGardenMenu(false);skillInput?.cancel();if(!groundSkillActive())combat.setMode('move');updateCombatUI();}
+  if(e.code==='Space'&&isZuzu()){e.preventDefault();if(!e.repeat&&!skillInput?.debug().active)castWaterSkill();}
+  if(e.code==='Space'&&hasIronShoulder()){e.preventDefault();if(!e.repeat)castIronShoulder();}
+  if(e.code==='Escape'){
+    if(gardenFriends?.close(true))return;
+    setGardenMenu(false);skillInput?.cancel();if(!groundSkillActive()){combat.setMode('move');ironAim=null;}updateCombatUI();
+  }
 });
 
 const diagnostics = { ready: false, version: THREE.REVISION, errors: [] };
@@ -782,6 +1074,7 @@ window.__mudkipTest = {
   facing:()=>actor.getWorldDirection(new THREE.Vector3()).toArray(),
   footprints:()=>footprints?.debug(),
   meadow:()=>resourcePreview?.meadow.debug(),
+  friends:()=>gardenFriends?.debug(),
   windChime:()=>resourcePreview?.windChime?.debug(),
   expression:()=>eyeExpressions?.debug(),
   dance:()=>({playing:isGardenDancePlaying(),pending:pendingGardenDance?.kind??null,last:lastGardenDance,counts:{...danceCounts},completed:completedGardenDances}),
@@ -801,6 +1094,7 @@ window.__mudkipTest = {
   combat:()=>combat?{...combat.debug(),feedback:resourcePreview.targetFeedback.debug()}:null,
   skill:()=>skillInput?.debug(),
   tackle:()=>tackle?{...tackle.debug(),effects:tackleEffects.debug()}:null,
+  iron:()=>iron?{...iron.debug(),effects:tackleEffects.debug(),targetId:ironAim}:null,
   mud:()=>mud?{...mud.debug(),effects:mudEffects.debug()}:null,
   castTackle,
   castMud,
@@ -810,7 +1104,7 @@ window.__mudkipTest = {
   fire:()=>combat?.fire(state.paused),
   destination: () => {let lines=0;scene.traverse(o=>{if(o.isLine)lines++;});return destinationMarker?{...destinationMarker.debug(),routeLines:lines}:null;},
   navigation: () => navigation?{...navigation.debug(),...gardenWalker.debug(),ground:resourcePreview.groundHeight(actor.position.x,actor.position.z)}:null,
-  snapshot: () => ({ ...state,speed:motion.speed,visualLean:[visualPivot.rotation.x,visualPivot.rotation.z],clip: currentName, time: active?.time, position: actor.position.toArray(), target: target?.toArray() ?? null, actions: [...actions].map(([name,a]) => ({ name, weight: a.isScheduled() ? a.getEffectiveWeight() : 0, scheduled: a.isScheduled(), running: a.isRunning() })), hearts: hearts.length }),
+  snapshot: () => ({ ...state,character:activeCharacter,speed:motion.speed,visualLean:[visualPivot.rotation.x,visualPivot.rotation.z],clip: currentName, time: active?.time, position: actor.position.toArray(), target: target?.toArray() ?? null, actions: [...actions].map(([name,a]) => ({ name, weight: a.isScheduled() ? a.getEffectiveWeight() : 0, scheduled: a.isScheduled(), running: a.isRunning() })), hearts: hearts.length }),
   play: (name, immediate = false) => { cancelGardenDanceRequest();cancelGardenMeal();stopTravel(); clearHearts(); state.paused = false; updatePauseUI(); playClip(name, { immediate, force: true }); },
   seek,
   moveTo: (x,z) => { state.movement = true; $('movement').checked = true; return moveTo(new THREE.Vector3(x,0,z)); },
@@ -846,7 +1140,6 @@ try {
       trackGardenLoad(animationMetadata),
       loadResourcePreviewAssets(resourceRoot, trackGardenLoad),
     ]);
-    clipSettings = new Map(metadata.clips.map(clip => [clip.name, clip]));
   } else {
     gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/mudkip.glb`);
   }
@@ -866,23 +1159,8 @@ try {
     }
     if (o.isSkinnedMesh) skeletons.add(o.skeleton);
   });
-  mixer = new THREE.AnimationMixer(model);
-  for (const clip of gltf.animations) {
-    const action = mixer.clipAction(clip);
-    const looping=clipSettings.get(clip.name)?.loop??false;
-    action.setLoop(looping ? THREE.LoopRepeat : THREE.LoopOnce, looping ? Infinity : 1);
-    action.clampWhenFinished = !looping;
-    actions.set(clip.name, action);
-  }
+  ({ mixer, actions, clipSettings } = createPlayback(gltf, metadata));
   for (const name of Object.keys(labels)) if (!actions.has(name)) throw new Error(`GLB 缺少 ${name} 动作`);
-  mixer.addEventListener('finished',event=>{
-    if(event.action!==active||event.action.loop!==THREE.LoopOnce)return;
-    if(currentName==='Eat'&&pendingGardenDance?.kind==='meal'&&resourcePreview?.view==='garden'){startGardenDance({completedMeal:true});return;}
-    const danced=isGardenDancePlaying();
-    if(danced)completedGardenDances++;
-    playClip(swimming?.inWater?'SwimIdle':'Idle',{completed:true});
-    if(danced)gardenFeedback('跳完啦，再按一次跳舞键吧～');
-  });
   if(resourceMode){
     resourcePreview=await createResourcePreview({renderer,scene,actor,model,root:resourceRoot,assets:previewAssets,metadata,stageColliders:[stage,floor],toon,heartTexture,mobileGraphics,onWaterContact:event=>combat?.contact(event)});
     footprints=createGardenFootprints({scene,actor,model,clips:metadata.clips,
@@ -891,30 +1169,58 @@ try {
       onStop:()=>{cancelGardenDanceRequest();cancelGardenMeal();swimming?.hold();stopTravel();clearHearts();if(state.loaded)playClip(swimming?.inWater?'SwimIdle':'Idle');},
       onShoot:(point,id)=>{stopTravel();clearHearts();playClip('WaterShoot',{force:true,gameShot:{point,id}});},
       onMessage:gardenFeedback,onHit:(id,direction)=>{
+        const push=new THREE.Vector3().fromArray(direction??[0,0,1]);
+        if(id.startsWith('visitor:'))return gardenFriends.hit(id,'water',push)??'水花落下了。';
         const fruit=resourcePreview.orchard.knockDown(id);
         if(fruit)return `${fruit}掉下来啦，点地上的果子就能吃！`;
-        const push=direction?new THREE.Vector3().fromArray(direction).setY(0).normalize():undefined;
-        resourcePreview.targetFeedback.hit(id,{direction:push});
+        resourcePreview.targetFeedback.hit(id,{direction:direction?push.setY(0).normalize():undefined});
       }});
     navigation=createGardenNavigation(resourcePreview.layout,{extraColliders:resourcePreview.extraColliders});gardenWalker=createGardenWalker(navigation);
     tackleEffects=createTackleEffects(resourcePreview.environment);
+    iron=createGardenIronShoulder({actor,navigation,groundHeight:resourcePreview.groundHeight,
+      targetContact:resourcePreview.tackleTargetContact,effects:tackleEffects,
+      onPhase:phase=>{
+        if(phase==='idle'){
+          visualPivot.position.x=0;
+          playClip('Idle',{immediate:true});
+          return;
+        }
+        gardenFeedback({charge:'侧身抖肩蓄力…',dash:'铁山靠！',blocked:'碰到障碍，收住了。',miss:'冲空了。'}[phase]);
+      },
+      onHit:(id,direction,damage)=>{
+        if(id.startsWith('visitor:')){
+          const message=gardenFriends.hit(id,'iron',direction);
+          if(message)gardenFeedback(`${message}物理伤害 ${damage}`);
+        }else{
+          resourcePreview.targetFeedback.hit(id,{kind:'tackle',direction,hold:.055});
+          gardenFeedback(`铁山靠命中练习靶，物理伤害 ${damage}。`);
+        }
+      }});
     tackle=createGardenTackle({actor,pivot:visualPivot,model,navigation,groundHeight:resourcePreview.groundHeight,
       targetContact:resourcePreview.tackleTargetContact,effects:tackleEffects,
-      onPhase:(phase,kind)=>{
+      onPhase:(phase,kind,id)=>{
         if(phase==='windup')gardenFeedback('压低身体，准备撞击…');
         if(phase==='dash')gardenFeedback('蹬地，扑击！');
-        if(phase==='hitstop')gardenFeedback('砰！撞中靶子了。');
+        if(phase==='hitstop'&&!gardenFriends.targetName(id))gardenFeedback('砰！撞中靶子了。');
         if(phase==='recover'){
           playClip('Idle');
           if(kind==='miss')gardenFeedback('急刹！走近靶子再试一次。');
           if(kind==='blocked')gardenFeedback('前面有障碍，刹住啦。');
         }
-      },onHit:(id,direction,hold)=>resourcePreview.targetFeedback.hit(id,{kind:'tackle',direction,hold})});
+      },onHit:(id,direction,hold)=>{
+        if(id.startsWith('visitor:')){
+          const message=gardenFriends.hit(id,'tackle',direction);
+          if(message)gardenFeedback(message);
+        }else resourcePreview.targetFeedback.hit(id,{kind:'tackle',direction,hold});
+      }});
     mudEffects=createMudEffects(resourcePreview.environment);
     mud=createGardenMud({actor,pivot:visualPivot,model,groundHeight:resourcePreview.groundHeight,
       trace:resourcePreview.traceMud,resolveTarget:resourcePreview.targetPoint,effects:mudEffects,
       onRelease:()=>gardenFeedback('把泥团甩出去！'),onContact:(contact,velocity)=>{
-        if(contact.targetId){
+        if(contact.targetId?.startsWith('visitor:')){
+          const message=gardenFriends.hit(contact.targetId,'mud',velocity);
+          if(message)gardenFeedback(message);
+        }else if(contact.targetId){
           resourcePreview.targetFeedback.hit(contact.targetId,{kind:'mud',direction:velocity.clone().setY(0).normalize()});
           gardenFeedback('啪嗒！泥团粘在靶上了。');
         }else if(contact.kind==='water'){
@@ -932,6 +1238,21 @@ try {
       onMessage:gardenFeedback,onSplash:(point,options)=>resourcePreview.pondWater.splash(point,options),onLand:()=>footprints.wet()});
     if(!navigation.isWalkable([resourcePreview.layout.spawn.position[0],resourcePreview.layout.spawn.position[2]]))throw new Error('庭院出生点位于障碍内');
     toon.excludeUnstyled();
+    const characters = previewAssets.manifest.characters ?? { mudkip: { name: 'ZUZU' } };
+    const loadCharacter = createCharacterLoader(characters, loader);
+    stageRoster = setupStageRoster(characters, loadCharacter);
+    gardenFriends = createGardenFriends({
+      scene, characters, playerId: activeCharacter, actor, camera, preview: resourcePreview, navigation, loadCharacter,
+      host: { gltf, config: metadata }, onControl: switchGardenCharacter,
+      portrait: createCharacterPortrait, feedback: gardenFeedback, onOpen: () => setGardenMenu(false),
+      onLeave: id => {
+        if (ironAim === id) ironAim = null;
+        const aim = combat.debug();
+        if (aim.targetId === id && aim.phase !== 'shooting') combat.cancel();
+        updateCombatUI();
+      },
+    });
+    resourcePreview.setVisitors(gardenFriends);
     const music = $('garden-bgm');
     const musicToggle = $('garden-music');
     music.volume = .25;
@@ -961,7 +1282,6 @@ try {
     $('scene-view').addEventListener('change',(event)=>{
       const garden=event.target.value==='garden';
       musicToggle.hidden = !garden;
-      $('garden-score').hidden = !garden;
       $('garden-menu').hidden = !garden;
       $('garden-dock').hidden = !garden;
       if (!garden) music.pause();
@@ -974,23 +1294,27 @@ try {
       document.body.classList.toggle('garden-active',garden);
       syncGardenViewport();
       resourcePreview.setView(event.target.value);
+      gardenFriends.setView(garden);
+      stageRoster.setView(garden,gardenFriends.controlled);
+      syncGardenPlayer(garden);
       waterFramed=false;
       stopTravel();clearHearts();playClip('Idle',{immediate:true});
       state.paused=false;updatePauseUI();
       state.movement=garden;$('movement').checked=garden;$('movement').disabled=false;
       [stage,border,dots].forEach((o)=>o.visible=!garden);
       floor.position.y=garden?-.54:-.035;
-      resetActor();
-      if(garden)gardenFeedback('点果树再按水枪，试试把果子打下来！');
+      resetActor(garden);
+      if(garden)gardenFeedback(isZuzu()?'点果树再按水枪，试试把果子打下来！':`现在操控 ${gardenFriends.controlledName}，点草地移动。`);
       const extent=garden?7:2.3;
       Object.assign(key.shadow.camera,{left:-extent,right:extent,top:extent,bottom:-extent,far:garden?30:10});
       key.shadow.camera.updateProjectionMatrix();key.position.set(garden?-6:-2.5,garden?12:4.5,garden?8:3);
       toon.setView(garden?'garden':'stage');
-      $('resource-hint').textContent=garden?'点果树瞄准 · 用水枪打落果子。':'十二段动作 · 可以逐帧查看。';
+      $('resource-hint').textContent=garden?'点果树瞄准 · 用水枪打落果子。':stageHint();
       $('view-hint').textContent=garden
         ? (mobileGraphics?'点地移动 · 双指缩放':'点草地移动 · 拖动旋转')
         : (mobileGraphics?touchViewHint:'拖动旋转 · 滚轮缩放');
       resetView();
+      updateCombatUI();
     });
     const changeView=(view)=>{$('scene-view').value=view;$('scene-view').dispatchEvent(new Event('change'));};
     $('enter-garden').addEventListener('click',()=>changeView('garden'));
@@ -1022,7 +1346,8 @@ try {
     $('garden-basket').addEventListener('click',()=>{goEatGardenFruit();renderer.domElement.focus({preventScroll:true});});
     $('garden-tackle').addEventListener('click',castTackle);
     $('garden-mud').addEventListener('click',castMud);
-    skillInput=createWaterSkillInput({button:$('garden-fire'),canStart:()=>resourcePreview.view==='garden'&&!state.paused&&!swimming.busy&&!groundSkillActive()&&combat.debug().phase==='idle',
+    $('garden-iron').addEventListener('click',castIronShoulder);
+    skillInput=createWaterSkillInput({button:$('garden-fire'),canStart:()=>isZuzu()&&resourcePreview.view==='garden'&&!state.paused&&!swimming.busy&&!groundSkillActive()&&combat.debug().phase==='idle',
       onStart:()=>{cancelGardenDanceRequest();skillAimBefore=combat.debug();controls.enabled=false;if(!skillAimBefore.targetId)combat.aimAt(forwardWaterPoint(),null,{silent:true});updateCombatUI();},
       onDrag:({x,y})=>{
         const forward=new THREE.Vector3();camera.getWorldDirection(forward);forward.y=0;forward.normalize();
@@ -1051,6 +1376,8 @@ try {
     $('scene-view').dispatchEvent(new Event('change'));
   }
   const previewClip = params.get('clip');
+  const previewCharacter = params.get('character');
+  if(resourceMode && resourcePreview.view==='stage' && previewCharacter) await stageRoster.select(previewCharacter);
   if(resourceMode&&resourcePreview.view==='stage'&&actions.has(previewClip))playClip(previewClip,{immediate:true});
   if (resourceMode) advanceGardenLoading();
 } catch (error) {
@@ -1070,19 +1397,25 @@ window.addEventListener('resize', resize);
 resize();
 let previousTime;
 function stepSimulation(delta){
+  const garden=resourcePreview?.view==='garden';
   if (mixer && !state.paused) {
-    if(resourcePreview?.view==='garden')footprints?.update(delta);
+    if(garden&&isZuzu())footprints?.update(delta);
     // Restore the authored pose before the mixer's unchanged-value cache runs.
     combat?.restorePose();
     tackle?.restorePose();
     mud?.restorePose();
-    if(resourcePreview?.view==='garden'){
+    if(garden&&isZuzu()){
       if(!groundSkillActive())combat.update(delta);
       tackle.update(delta);
       mud.update(delta);
     }
-    mixer.update(tackle?.holding?0:delta);
-    if(resourcePreview?.view==='garden')swimming?.update(delta);
+    if(garden)iron?.update(delta);
+    if(garden&&iron?.active){
+      active.time=iron.time;
+      mixer.update(0);
+      visualPivot.position.x=iron.lunge;
+    }else mixer.update(tackle?.holding?0:delta);
+    if(garden&&isZuzu())swimming?.update(delta);
     if (target && locomotion(currentName)) {
       const waypoint=resourcePreview?.view==='garden'?gardenWalker.waypoint:target;
       const difference = new THREE.Vector3(waypoint?.x??target.x,actor.position.y,waypoint?.z??target.z).sub(actor.position); difference.y = 0;
@@ -1099,7 +1432,7 @@ function stepSimulation(delta){
           actor.quaternion.rotateTowards(desired,(currentName==='Run'?9:7)*delta);
           const facing=new THREE.Vector3(0,0,1).applyQuaternion(actor.quaternion).dot(difference);
           const gait=locomotion(currentName),remaining=gardenWalker.remainingDistance(actor.position);
-          const cruiseSpeed = gait.speed * state.rate * (currentName === 'Run' ? gardenRunSpeedMultiplier : 1);
+          const cruiseSpeed = gait.speed * state.rate * (currentName === 'Run' && isZuzu() ? gardenRunSpeedMultiplier : 1);
           const desiredSpeed=Math.min(cruiseSpeed,Math.sqrt(2*(gait.deceleration??6)*remaining))*Math.max(.2,(facing+1)/2);
           const before=motion.speed,change=(desiredSpeed>before?(gait.acceleration??7):(gait.deceleration??6))*delta;
           motion.speed=THREE.MathUtils.clamp(desiredSpeed,before-change,before+change);
@@ -1110,7 +1443,7 @@ function stepSimulation(delta){
           const travelled=Math.hypot(result.position.x-actor.position.x,result.position.z-actor.position.z);
           const groundHit=resourcePreview.hitGround(result.position.x,result.position.z);
           actor.position.set(result.position.x,(groundHit?.point.y??actor.position.y-.005)+.005,result.position.z);
-          footprints.step({name:currentName,time:active.time,action:state.transitions,distance:travelled,groundHit});
+          if(isZuzu())footprints.step({name:currentName,time:active.time,action:state.transitions,distance:travelled,groundHit});
           if(result.finished||result.blocked){
             const adjusted=gardenWalker.debug().plan?.adjusted;stopTravel({arrived:!result.blocked});playClip('Idle');
             if(gardenMeal&& !result.blocked){gardenMeal.phase='settling';gardenMeal.wait=0;gardenFeedback('到果子旁啦，站稳吃一颗。');}
@@ -1136,8 +1469,11 @@ function stepSimulation(delta){
     if(resourcePreview?.view==='garden'){
       resourcePreview.meadow.update(delta,actor.position);
       resourcePreview.windChime?.update(delta,actor.position);
-      if(tackle.active)tackle.applyPose();else if(mud.active)mud.applyPose();else combat.pose();
-      tackleEffects.update(delta,actor.position,tackle.direction,tackle.dashing,tackle.flightHeight);
+      gardenFriends.update(delta);
+      if(isZuzu()){
+        if(tackle.active)tackle.applyPose();else if(mud.active)mud.applyPose();else combat.pose();
+      }
+      tackleEffects.update(delta,actor.position,iron.active?iron.direction:tackle.direction,iron.active?iron.dashing:tackle.dashing,iron.active?0:tackle.flightHeight);
       mudEffects.update(delta);
     }
     for (let i=hearts.length-1;i>=0;i--) {
@@ -1149,8 +1485,8 @@ function stepSimulation(delta){
     }
   }
   if(resourcePreview&&active)resourcePreview.update(currentName,active.time,{delta:state.paused?0:delta*state.waterRate,paused:state.paused});
-  if(active)eyeExpressions?.update(currentName,active.time);
-  if(resourcePreview?.view==='garden')resourcePreview.pondWater.update(state.paused?0:delta,{contacts:resourcePreview.swimContacts(),position:actor.position,yaw:actor.rotation.y,inWater:swimming?.inWater,moving:swimming?.moving});
+  if(active&&isZuzu())eyeExpressions?.update(currentName,active.time);
+  if(garden)resourcePreview.pondWater.update(state.paused?0:delta,{contacts:isZuzu()?resourcePreview.swimContacts():[],position:actor.position,yaw:actor.rotation.y,inWater:isZuzu()&&swimming?.inWater,moving:isZuzu()&&swimming?.moving});
 }
 renderer.setAnimationLoop((now) => {
   if (mobileGraphics && previousTime !== undefined && now - previousTime < 1000 / 30 - 1) return;

@@ -6,6 +6,18 @@
   "characterForward": "+Z",
   "character": "characters/mudkip/mudkip.glb",
   "animations": "characters/mudkip/animations.json",
+  "characters": {
+    "mudkip": {
+      "name": "ZUZU",
+      "model": "characters/mudkip/mudkip.glb",
+      "animations": "characters/mudkip/animations.json"
+    },
+    "dawn": {
+      "name": "Dawn",
+      "model": "characters/dawn/dawn.glb",
+      "animations": "characters/dawn/animations.json"
+    }
+  },
   "environment": "environments/garden.glb",
   "level": "levels/garden.json",
   "effects": {
@@ -71,6 +83,26 @@
       "path": "characters/mudkip/animations.json",
       "bytes": 7943,
       "sha256": "f346bbe1dbe15207532461c24677c863836bfa2dbeff1c53116c2dd0c584b91b"
+    },
+    {
+      "path": "characters/dawn/dawn.glb",
+      "bytes": 2093904,
+      "sha256": "75214037cfc607b5d7ff1be2201bcb0b438fb6eae65d754b8fa0b1b18de53f64",
+      "meshes": 36,
+      "primitives": 44,
+      "triangles": 85423,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Run",
+        "IronShoulder"
+      ],
+      "colorPrimitives": 0
+    },
+    {
+      "path": "characters/dawn/animations.json",
+      "bytes": 554,
+      "sha256": "db3c48b437763c3394ea1ad9e7b77e15deaa3abafcbe38532318d40c007089aa"
     },
     {
       "path": "environments/garden.glb",

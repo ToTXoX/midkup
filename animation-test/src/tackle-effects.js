@@ -38,16 +38,35 @@ export function createTackleEffects(environment){
   const burst=new THREE.Sprite(new THREE.SpriteMaterial({map:burstMap(),transparent:true,depthWrite:false,toneMapped:false}));
   const lettering=new THREE.Sprite(new THREE.SpriteMaterial({map:comicLettering('砰！'),transparent:true,depthWrite:false,depthTest:false,toneMapped:false}));
   const dust=new THREE.InstancedMesh(new THREE.SphereGeometry(1,7,4),new THREE.MeshBasicMaterial({color:'#e1c19a',transparent:true,depthWrite:false}),6);
+  const pulseRing=new THREE.Mesh(new THREE.RingGeometry(.80,1,40),new THREE.MeshBasicMaterial({color:'#ffd087',side:THREE.DoubleSide,transparent:true,depthWrite:false}));
+  pulseRing.rotation.x=-Math.PI/2;
   dust.instanceMatrix.setUsage(THREE.DynamicDrawUsage);dust.frustumCulled=false;
   burst.renderOrder=5;lettering.renderOrder=6;
-  object.add(streaks,dust,burst,lettering);
+  object.add(streaks,dust,burst,lettering,pulseRing);
   object.traverse(o=>{o.raycast=()=>{};o.userData.combatDecoration=true;});
   const dustOrigin=new THREE.Vector3(),dustDirection=new THREE.Vector3(),dustSide=new THREE.Vector3();
   const impact=new THREE.Vector3(),impactDirection=new THREE.Vector3();
   const cameraSide=new THREE.Vector3(),towardCamera=new THREE.Vector3(),particle=new THREE.Object3D();
-  let dustAge=10,impactAge=10,dustKind=null,screenSide=1;
+  let dustAge=10,impactAge=10,pulseAge=10,pulseSize=1,dustKind=null,screenSide=1,audio;
 
-  function reset(){dustAge=impactAge=10;dustKind=null;streaks.visible=dust.visible=burst.visible=lettering.visible=false;}
+  function reset(){dustAge=impactAge=pulseAge=10;dustKind=null;streaks.visible=dust.visible=burst.visible=lettering.visible=pulseRing.visible=false;}
+  function enableBeatSound(){
+    if(!globalThis.AudioContext)return;
+    try { audio??=new AudioContext(); } catch { return; }
+    if(audio.state==='suspended')audio.resume().catch(()=>{});
+  }
+  function pulse(point,beat){
+    pulseAge=0;pulseSize=.66+.12*beat;
+    pulseRing.position.copy(point);pulseRing.position.y+=.015;
+    if(audio?.state!=='running')return;
+    const drum=audio.createOscillator(),gain=audio.createGain(),now=audio.currentTime;
+    drum.frequency.setValueAtTime(112-8*beat,now);
+    drum.frequency.exponentialRampToValueAtTime(49,now+.115);
+    gain.gain.setValueAtTime(.075+.012*beat,now);
+    gain.gain.exponentialRampToValueAtTime(.001,now+.14);
+    drum.connect(gain).connect(audio.destination);drum.start(now);drum.stop(now+.14);
+    drum.onended=()=>{drum.disconnect();gain.disconnect();};
+  }
   function emitDust(point,direction,kind){
     dustOrigin.copy(point);dustDirection.copy(direction);dustSide.set(direction.z,0,-direction.x);
     dustAge=0;dustKind=kind;
@@ -55,7 +74,12 @@ export function createTackleEffects(environment){
   function hit(point,direction){impact.copy(point);impactDirection.copy(direction);impactAge=0;}
   function update(delta,position,direction,dashing,height=0){
     if(delta<=0)return;
-    dustAge+=delta;impactAge+=delta;
+    dustAge+=delta;impactAge+=delta;pulseAge+=delta;
+    pulseRing.visible=pulseAge<.23;
+    if(pulseRing.visible){
+      pulseRing.scale.setScalar(pulseSize*(.46+.85*pulseAge/.23));
+      pulseRing.material.opacity=.70*(1-smoothstep(pulseAge,.015,.23));
+    }
     streaks.visible=dashing;
     if(dashing){streaks.position.copy(position);streaks.position.y+=height;streaks.rotation.y=Math.atan2(direction.x,direction.z);streaks.material.opacity=.65;}
     const t=dustAge/.31;
@@ -104,5 +128,5 @@ export function createTackleEffects(environment){
   }
 
   reset();
-  return {reset,dust:emitDust,hit,update,prepare,debug:()=>({burst:burst.visible,lettering:lettering.visible,streaks:streaks.visible,dust:dustKind&&dust.visible?dustKind:null})};
+  return {reset,dust:emitDust,hit,pulse,enableBeatSound,update,prepare,debug:()=>({burst:burst.visible,lettering:lettering.visible,streaks:streaks.visible,dust:dustKind&&dust.visible?dustKind:null})};
 }

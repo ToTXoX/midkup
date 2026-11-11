@@ -13,10 +13,10 @@ export function createGardenCombat({actor,model,preview,onShoot,onStop,onMessage
   const assessedOrigin=new THREE.Vector3(Infinity,Infinity,Infinity);
   const assessedPoint=new THREE.Vector3(Infinity,Infinity,Infinity);
   const up=new THREE.Vector3(0,1,0),right=new THREE.Vector3();
-  const targetName=id=>preview.orchard?.treeName(id)??names[id];
-  function clearHarvestedAim(){
-    if(!preview.orchard?.treeName(targetId)||preview.targetPoint(targetId))return;
-    restorePose();point=null;targetId=null;assessment=null;
+  const targetName=id=>preview.visitorName?.(id)??preview.orchard?.treeName(id)??names[id];
+  function clearMissingAim(){
+    if(!(targetId?.startsWith('visitor:')||preview.orchard?.treeName(targetId))||preview.targetPoint(targetId))return;
+    restorePose();point=null;targetId=null;assessment=null;phase='idle';
   }
   function assess(){
     assessmentAge=0;
@@ -44,18 +44,22 @@ export function createGardenCombat({actor,model,preview,onShoot,onStop,onMessage
     },
     fire(paused=false){if(paused||mode!=='aim'||!point||phase!=='idle')return false;phase='turning';onStop();onMessage('转过身，准备蓄水…');return true;},
     cancel(){restorePose();phase='idle';point=null;targetId=null;assessment=null;lastContact=null;},
-    onActionChange(name,{completed=false}={}){if(name!=='WaterShoot'&&phase==='shooting'){phase='idle';if(!completed)lastContact=null;clearHarvestedAim();}},
+    onActionChange(name,{completed=false}={}){if(name!=='WaterShoot'&&phase==='shooting'){phase='idle';if(!completed)lastContact=null;clearMissingAim();}},
     contact(event){
       if(event.shotId!==shot)return;
       lastContact={...event,point:event.point.toArray()};
       if(event.targetId){
         const message=onHit(event.targetId,event.direction);
         onMessage(typeof message==='string'?message:`命中${targetName(event.targetId)}！`);
-        if(phase==='idle')clearHarvestedAim();
+        if(phase==='idle')clearMissingAim();
       }else onMessage('水花落下了，再调整一下准星。');
     },
     update(delta){
       assessmentAge+=delta;
+      if(phase!=='shooting'&&targetId?.startsWith('visitor:')){
+        const aim=preview.targetPoint(targetId);
+        if(aim)point.copy(aim);else clearMissingAim();
+      }
       if(!point||mode!=='aim')return;
       if(phase!=='shooting'){
         const dx=point.x-actor.position.x,dz=point.z-actor.position.z;
