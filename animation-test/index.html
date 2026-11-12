@@ -7,6 +7,11 @@
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
     <title>ZUZU · 动画试验庭</title>
     <meta name="description" content="ZUZU 的 Blender 骨骼动画在 Three.js 中的交互预览。" />
+    <script>
+      if (new URLSearchParams(location.search).get('character') === 'dawn') {
+        location.replace(`./resources.html${location.search}${location.hash}`);
+      }
+    </script>
   </head>
   <body>
     <main id="app">

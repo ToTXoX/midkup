@@ -32,6 +32,11 @@ preventGameSelection(document.getElementById('app'));
 const $ = (id) => document.getElementById(id);
 const resourceMode = document.body.dataset.pack === 'game';
 const resourceRoot = `${import.meta.env.BASE_URL}assets/game/`;
+const aimIntroKey = 'mudkip.garden.aimIntroSeen';
+let aimIntroSeen = false;
+if (resourceMode) {
+  try { aimIntroSeen = localStorage.getItem(aimIntroKey) === '1'; } catch {}
+}
 const gardenLoading = $('garden-loading');
 const mobileGraphics = matchMedia('(pointer: coarse)').matches;
 const syncGardenViewport = resourceMode ? setupGardenViewport($('app'), $('garden-zoom-notice')) : null;
@@ -683,6 +688,8 @@ function syncGardenPlayer(garden) {
   $('garden-gait').hidden = guest && !(actions.has('Run') && locomotion('Run') && actions.has('Walk') && locomotion('Walk'));
   setHudText('garden-speaker', gardenFriends.controlledName);
   renderer.domElement.setAttribute('aria-label', guest ? `庭院：点击草地移动 ${gardenFriends.controlledName}，点击角色或练习靶瞄准` : zuzuCanvasLabel);
+  if (garden) renderer.domElement.setAttribute('aria-describedby', 'garden-lock-hint');
+  else renderer.domElement.removeAttribute('aria-describedby');
   resourcePreview.setPlayerModel(model);
 }
 
@@ -985,24 +992,29 @@ function castWaterSkill(){
   const fired=combat.fire(state.paused);updateCombatUI();return fired;
 }
 
+function dismissAimIntro(){
+  if(aimIntroSeen)return;
+  aimIntroSeen=true;
+  try { localStorage.setItem(aimIntroKey,'1'); } catch {}
+}
+
 function aimGardenTarget(point,id){
   if(!point||groundSkillActive())return;
   if(!isZuzu()){
     if(!canAimGuestSkill())return;
     guestAim=id;
+    if(id)dismissAimIntro();
     stopTravel();playClip('Idle');
-    gardenFeedback(`已锁定 ${gardenFriends.targetName(id)??'练习靶'}。`);
+    gardenFeedback(hasIronShoulder()&&hasBasketball()?'靠近可用铁山靠，也可以投篮球。':'点技能键施放。');
     updateCombatUI();
     return;
   }
   cancelGardenDanceRequest();
   if(combat.aimAt(point,id)){
+    if(id)dismissAimIntro();
     const visitor=gardenFriends.targetName(id);
     if(visitor)gardenFriends.greet(id);
-    if(visitor||resourcePreview.layout.targets.some(target=>target.id===id)){
-      const label=visitor?` ${visitor}`:combat.debug().targetName;
-      gardenFeedback(`已锁定${label}，可以喷水或掷泥，近距离也能撞击。`);
-    }
+    if(visitor||resourcePreview.layout.targets.some(target=>target.id===id))gardenFeedback('可喷水或掷泥，靠近可撞击。');
   }
   updateCombatUI();
 }
@@ -1132,6 +1144,11 @@ function updateCombatUI(){
   $('garden-fire').style.setProperty('--cooldown',`${busy&&info.phase==='shooting'?Math.min(1,active.time)*360:360}deg`);
   if(info.phase==='shooting'&&!info.lastContact)gardenFeedback(active.time<.33?'闭嘴蓄水…':active.time<.66?'水枪发射！':'水流正在飞向目标…');
   setHudText('garden-hit-count',String(resourcePreview.targetFeedback.debug().total).padStart(2,'0'));
+  const lockedId=guestSkillGarden?guestAim:garden?info.targetId:null;
+  const lockedName=lockedId?combat.targetName(lockedId):null;
+  $('garden-lock-hint').hidden=!lockedName;
+  setHudText('garden-lock-label',lockedName?`已锁定 ${lockedName}`:'');
+  $('garden-aim-intro').hidden=aimIntroSeen||!(garden||guestSkillGarden)||groundBusy||busy||gesture.active||!!target;
   const aimPoint=guestSkillGarden&&guestAim?resourcePreview.targetPoint(guestAim):garden&&info.point?new THREE.Vector3().fromArray(info.point):null;
   $('aim-reticle').hidden=!aimPoint||groundBusy;
   if(aimPoint&&!groundBusy){
@@ -1141,7 +1158,7 @@ function updateCombatUI(){
     const ready=guestSkillGarden?(ironGarden&&iron.ready)||(basketballGarden&&basketball.ready):info.assessment?.reachable&&info.assessment?.clear;
     $('aim-reticle').dataset.ready=String(ready);$('aim-reticle').dataset.firing=String(busy);
     const status=gesture.active?'松手喷水':info.assessment?.blocked?'被遮挡':!info.assessment?.reachable?'距离太远':info.targetId?'可命中':'已瞄准';
-    setHudText('aim-label',guestSkillGarden?`${gardenFriends.targetName(guestAim)??'练习靶'} · 已锁定`:`${info.targetName} · ${status}`);
+    setHudText('aim-label',guestSkillGarden?`${lockedName??'练习靶'} · 已锁定`:`${info.targetName} · ${status}`);
   }
   const hit=resourcePreview.targetFeedback.debug();
   const recent=hit.targets.filter(t=>t.hits&&t.age<.75).sort((a,b)=>a.age-b.age)[0];
@@ -1153,7 +1170,7 @@ function updateCombatUI(){
     const id=b.dataset.aimTarget,p=resourcePreview.targetPoint(id).project(camera);
     b.hidden=!(garden||guestSkillGarden)||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1;
     b.style.left=`${(p.x+1)*innerWidth/2}px`;b.style.top=`${(1-p.y)*innerHeight/2}px`;
-    b.setAttribute('aria-pressed',String((guestSkillGarden?guestAim:info.targetId)===id));
+    b.setAttribute('aria-pressed',String(lockedId===id));
     b.dataset.hits=hit.targets.find(t=>t.id===id).hits;
   }
 }
@@ -1534,13 +1551,15 @@ try {
   $('status').textContent = resourceMode ? `小伙伴准备好啦` : `GLB 已加载 · ${gltf.animations.length} 段动作 · ${[...skeletons][0].bones.length} 根骨骼`;
   playClip('Idle', { immediate: true });
   const params = new URLSearchParams(location.search);
-  const initialScene = params.get('scene') ?? (location.pathname === '/' ? 'garden' : 'stage');
+  const previewCharacter = params.get('character');
+  const previewClip = params.get('clip');
+  const enterDawn = previewCharacter === 'dawn' && !previewClip;
+  const initialScene = params.get('scene') ?? (enterDawn || location.pathname === '/' ? 'garden' : 'stage');
   if (resourceMode && initialScene === 'garden') {
     $('scene-view').value = 'garden';
     $('scene-view').dispatchEvent(new Event('change'));
+    if (previewCharacter && await gardenFriends.invite(previewCharacter)) switchGardenCharacter(previewCharacter);
   }
-  const previewClip = params.get('clip');
-  const previewCharacter = params.get('character');
   if(resourceMode && resourcePreview.view==='stage' && previewCharacter) await stageRoster.select(previewCharacter);
   if(resourceMode&&resourcePreview.view==='stage'&&actions.has(previewClip))playClip(previewClip,{immediate:true});
   if (resourceMode) advanceGardenLoading();

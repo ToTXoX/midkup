@@ -84,6 +84,7 @@ export function createGardenCombat({actor,model,preview,onShoot,onStop,onMessage
       if(assessmentAge>=.12&&(origin.distanceToSquared(assessedOrigin)>.0004||point.distanceToSquared(assessedPoint)>.0016||assessmentAge>=.6))assess();
     },
     restorePose,
+    targetName,
     get point(){return point;},get mode(){return mode;},
     debug:()=>({mode,phase,point:point?.toArray()??null,targetId,targetName:targetName(targetId)??'草地',shot,lastContact,assessment}),
   };

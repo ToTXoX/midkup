@@ -138,6 +138,16 @@
 .resource .aim-reticle b { border-radius: 0; transform: rotate(45deg); }
 .resource .aim-reticle span, .resource .target-hotspots button span { border: 1px solid #6b8590; border-radius: 4px 8px 4px 8px; color: var(--ui-ink); background: var(--ui-paper); box-shadow: 1px 2px 0 #4b6a7c44; font-weight: 600; }
 .target-hotspots button span { pointer-events: none; }
+.resource .target-hotspots button .garden-aim-intro {
+  top: auto; bottom: calc(100% + 2px); z-index: 1; padding: 3px 8px;
+  background: #fff3cb; color: #364f62; font-size: 11px; font-weight: 800;
+  opacity: 1; pointer-events: auto; cursor: pointer;
+}
+.garden-aim-intro::after {
+  content: ''; position: absolute; left: calc(50% - 3px); bottom: -4px; width: 6px; height: 6px;
+  background: inherit; border-right: 1px solid #6b8590; border-bottom: 1px solid #6b8590; transform: rotate(45deg);
+}
+.resource .target-hotspots button .garden-aim-intro:not([hidden]) + span { opacity: 0; }
 .resource .hit-pop { color: #ffdf88; font-size: 19px; font-weight: 900; letter-spacing: 1px; -webkit-text-stroke: 2.5px var(--ui-ink); paint-order: stroke fill; text-shadow: 1px 3px 0 #fff9e3; }
 .resource .hit-pop>span { display: block; margin-bottom: 1px; font-size: 8px; text-align: center; color: #fffcec; letter-spacing: 2px; -webkit-text-stroke: 1.5px var(--ui-ink); }
 .resource .hit-pop strong { font-weight: 900; }
@@ -247,6 +257,12 @@
   box-shadow: 2px 4px 0 #4b6a7c55, inset 0 0 0 3px #fffbed;
 }
 .buddy-stamp img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: contain; }
+.garden-party-controls { display: grid; justify-items: center; gap: 2px; }
+.garden-switch-hint {
+  margin: 0; padding: 2px 6px; border: 1px solid #9eaeaa; border-radius: 7px;
+  background: var(--ui-paper); color: #3c5d70; font-size: 11px; font-weight: 700; line-height: 1.2;
+  white-space: nowrap;
+}
 .garden-party { display: flex; align-items: center; gap: 4px; pointer-events: auto; }
 .garden-party > .buddy-stamp { flex: none; }
 .garden-party[data-multiple] > .buddy-stamp { background: #a8e0e8; border-color: #23637e; }
@@ -276,6 +292,12 @@
   position: relative; min-height: 2.9em; margin: 0; color: var(--ui-ink);
   font-size: 16px; font-weight: 600; line-height: 1.45;
 }
+.garden-lock-hint {
+  display: flex; align-items: center; gap: 4px; margin: 4px 0 0;
+  color: #205a76; font-size: 12px; font-weight: 700; line-height: 1.3;
+}
+.garden-lock-hint svg { width: 15px; height: 15px; flex: none; }
+.garden-lock-hint span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .resource .garden-buttons { padding-top: 7px; gap: 7px; }
 .resource .garden-buttons button { display: grid; place-items: center; height: 32px; min-height: 32px; padding: 3px; border-radius: 8px; }
 .resource .garden-buttons svg { width: 22px; height: 22px; }
@@ -422,6 +444,7 @@
   .resource .garden-dock .garden-dialog { padding: 11px 11px 7px; }
   .resource .garden-dock .garden-speaker { top: -11px; font-size: 14px; }
   .resource .garden-dock .garden-feedback { min-height: 0; font-size: 14px; line-height: 1.35; }
+  .garden-lock-hint { font-size: 11px; }
 
   @media (max-width: 360px) {
     .resource.garden-active .brand-mark { width: 36px; height: 36px; }

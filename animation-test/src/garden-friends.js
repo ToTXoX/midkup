@@ -19,12 +19,15 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
   const status = document.getElementById('garden-invite-status');
   const party = document.getElementById('garden-party');
   const reserves = document.getElementById('garden-reserves');
+  const switchHint = document.getElementById('garden-switch-hint');
+  switchHint.hidden = Object.keys(characters).length < 2;
   const group = new Group();
   group.name = 'Garden visitors';
   group.visible = false;
   scene.add(group);
   const guests = new Map();
   const targets = new Map();
+  const invitations = new Map();
   const bodies = new WeakMap();
   let controlled = playerId;
   let visitNumber = 0;
@@ -38,6 +41,7 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
     const multiple = guests.size > 1;
     party.toggleAttribute('data-multiple', multiple);
     reserves.hidden = !multiple;
+    switchHint.textContent = multiple ? '点头像切换' : '邀请后可切换';
     const focused = document.activeElement;
     let movedFocus = false;
     for (const guest of guests.values()) {
@@ -276,16 +280,9 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
       else status.textContent = message;
     }
 
-    syncButton();
-    button.addEventListener('click', async () => {
-      if (loading || !group.visible) return;
-      if (guests.has(id)) {
-        if (!leave(id)) return;
-        syncButton();
-        status.textContent = '';
-        feedback(`和 ${character.name} 说再见啦。`);
-        return;
-      }
+    async function invite() {
+      if (!group.visible || loading) return false;
+      if (guests.has(id)) return true;
       loading = true;
       status.textContent = '';
       syncButton();
@@ -299,19 +296,35 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
           bodies.set(gltf.scene, body);
         }
         const position = findSpot(Math.max(body.standingRadius, playerRadius));
-        if (position) {
-          arrive(id, asset, guest, body, position);
-          if (group.visible) feedback(`${character.name} 来庭院做客啦！`);
-        } else {
+        if (!position) {
           reportFailure('附近没有空地，换个位置再邀请。');
+          return false;
         }
+        arrive(id, asset, guest, body, position);
+        if (group.visible) feedback(`${character.name} 来庭院做客啦！`);
+        return true;
       } catch (error) {
         reportFailure(`${character.name} 暂时没能到访，请再试一次。`);
         console.warn(error);
+        return false;
       } finally {
         loading = false;
         syncButton();
       }
+    }
+
+    invitations.set(id, invite);
+    syncButton();
+    button.addEventListener('click', () => {
+      if (loading || !group.visible) return;
+      if (!guests.has(id)) {
+        invite();
+        return;
+      }
+      if (!leave(id)) return;
+      syncButton();
+      status.textContent = '';
+      feedback(`和 ${character.name} 说再见啦。`);
     });
   }
 
@@ -328,6 +341,7 @@ export function createGardenFriends({ scene, characters, playerId, host, actor, 
 
   return {
     close,
+    invite: id => invitations.get(id)?.() ?? false,
     setView(garden) {
       if (!garden && group.visible && navigation.isWalkable(actor.position)) savePlayer();
       group.visible = garden;
