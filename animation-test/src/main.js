@@ -697,7 +697,6 @@ function switchGardenCharacter(id) {
   if (!state.loaded || resourcePreview.view !== 'garden' || id === gardenFriends.controlled) return;
   function change() {
     if (resourcePreview.view !== 'garden') return;
-    const previous = actor.position.clone();
     const changed = gardenFriends.control(id, asset => {
       combat.setMode('move');
       stopGardenActions();
@@ -708,13 +707,6 @@ function switchGardenCharacter(id) {
     syncGardenPlayer(true);
     playClip('Idle', { immediate: true, force: true });
     gardenFeedback(`现在操控 ${gardenFriends.controlledName}，点草地移动。`);
-    const projected = actor.position.clone().add(new THREE.Vector3(0,.35,0)).project(camera);
-    if (controls.getDistance() < 14 * lensDistanceScale() || Math.abs(projected.x) > .87 || Math.abs(projected.y) > .87) {
-      const offset = actor.position.clone().sub(previous).setY(0);
-      controls.target.add(offset);
-      camera.position.add(offset);
-      controls.update();
-    }
     updateCombatUI();
   }
   if (isZuzu() && swimming.inWater) {

@@ -141,8 +141,29 @@ try{
   await notice.waitFor({state:'hidden'});
   assert.equal(await phone.evaluate(()=>visualViewport.scale),1);
   assert.equal(await phone.locator('#app').evaluate(el=>getComputedStyle(el).touchAction),'none');
-  await phone.close();
   checks.push({name:'An already zoomed phone can pinch back to the original page scale'});
+
+  await phone.getByRole('button',{name:'邀请朋友'}).tap();
+  await phone.getByRole('button',{name:'邀请 Dawn'}).tap();
+  const dawn=phone.getByRole('button',{name:'操控 Dawn'});
+  await dawn.waitFor();
+  await phone.evaluate(()=>window.__mudkipTest.viewPond());
+  const readFraming=()=>phone.evaluate(()=>{
+    const game=window.__mudkipTest;
+    return {camera:game.camera(),board:game.project(0,0,0),character:game.snapshot().character};
+  });
+  const beforeSwitch=await readFraming();
+  for(const [button,character] of [[dawn,'dawn'],[phone.getByRole('button',{name:'操控 ZUZU'}),'mudkip']]){
+    await button.tap();
+    const afterSwitch=await readFraming();
+    assert.equal(afterSwitch.character,character);
+    for(const key of ['position','target']){
+      assert(Math.hypot(...afterSwitch.camera[key].map((value,i)=>value-beforeSwitch.camera[key][i]))<.0001);
+    }
+    assert(Math.hypot(afterSwitch.board.x-beforeSwitch.board.x,afterSwitch.board.y-beforeSwitch.board.y)<.001);
+  }
+  await phone.close();
+  checks.push({name:'Switching characters preserves the zoomed garden framing'});
   assert.deepEqual(errors,[]);
   await fs.writeFile(new URL('../../docs/camera-input-tests.json',import.meta.url),JSON.stringify({passed:true,checks,errors},null,2));
   console.log(JSON.stringify({checks,errors},null,2));
